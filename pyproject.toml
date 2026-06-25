@@ -17,7 +17,7 @@ homepage = "https://github.com/mossadnik/pyspark-inspect"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pyspark = "==3.5.*"
+pyspark = ">=3.5"
 
 [build-system]
 requires = ["poetry-core"]
