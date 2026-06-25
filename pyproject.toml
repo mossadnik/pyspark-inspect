@@ -1,9 +1,19 @@
 [tool.poetry]
 name = "pyspark-inspect"
 version = "0.1.0"
-description = ""
-authors = ["Matthias Ossadnik <ossadnik.matthias@gmail.com>"]
+description = "Inspect pyspark query plans"
+authors = [
+    {name = "Matthias Ossadnik",email = "ossadnik.matthias@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha"
+]
 readme = "README.md"
+license = "MIT"
+
+[tool.poetry.urls]
+homepage = "https://github.com/mossadnik/pyspark-inspect"
+
 
 [tool.poetry.dependencies]
 python = "^3.11"
