@@ -1,0 +1,75 @@
+
+# CTE
+- |-
+  with t as (select 1 as a)
+  select * from t
+
+# select
+- |-
+  select a, c, sum(b) over (partition by c) as x
+  from (select 1 as a, 2 as b, 3 as c)
+
+# joins
+- |-
+  select *
+  from (select 1 as a) s
+  cross join (select 1 as b) t
+- |-
+  select *
+  from (select 1 as a) s
+  inner join (select 1 as b) t
+  on s.a = t.b
+- |-
+  select *
+  from (select 1 as a) s
+  left join (select 1 as b) t
+  on s.a = t.b
+- |-
+  select *
+  from (select 1 as a) s
+  right join (select 1 as b) t
+  on s.a = t.b
+- |-
+  select *
+  from (select 1 as a) s
+  full outer join (select 1 as b) t
+  on s.a = t.b
+- |-
+  select *
+  from (select 1 as a) s
+  left semi join (select 1 as b) t
+  on s.a = t.b
+- |-
+  select *
+  from (select 1 as a) s
+  left anti join (select 1 as b) t
+  on s.a = t.b
+
+# set operations
+# - union, minus, intersect
+- |-
+  select 1 as a
+  union all
+  select 2 as a
+- |-
+  select 1 as a
+  except all
+  select 2 as a
+- |-
+  select 1 as a
+  intersect all
+  select 2 as a
+
+
+# group by operations
+- |-
+  select a, count(*) as b
+  from (select 1 as a)
+  group by a
+
+# other
+- |-
+  select distinct a
+  from (select 1 as a, 2 as b)
+- |-
+  select 1 as a limit 1

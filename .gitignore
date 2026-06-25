@@ -1,0 +1,30 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+
+# build
+dist/
+
+# testing
+htmlcov/
+.pytest_cache/
+.coverage
+
+# jupyter
+scratch/
+*.ipynb
+.ipynb_checkpoints/
+
+# preliminary docs
+docs/
+mkdocs.yml
+
+# local
+scratch/
+scripts/
+.env
+
+# editor
+.vscode/
+.DS_Store
