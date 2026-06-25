@@ -167,6 +167,11 @@ def _parse_distinct(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
     return P.Distinct(children[0])
 
 
+def _parse_filter(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
+    condition = parse_expression(load_catalyst_plan(plan.data['condition']))
+    return P.Filter(children[0], condition=condition)
+
+
 def _skip_unary(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
     """Skip a unary plan node, e.g. repartition"""
     return children[0]
@@ -190,6 +195,7 @@ PLAN_PARSER: dict[str, tp.Callable[[CatalystPlan, list[P.Plan]], P.Plan]] = {
     f'{LOGICAL_PLAN}.CTERelationRef': _parse_cte_relation_ref,
     f'{LOGICAL_PLAN}.Distinct': _parse_distinct,
     f'{LOGICAL_PLAN}.Except': _parse_except,
+    f'{LOGICAL_PLAN}.Filter': _parse_filter,
     f'{LOGICAL_PLAN}.GlobalLimit': _parse_global_limit,
     f'{LOGICAL_PLAN}.Intersect': _parse_intersect,
     f'{LOGICAL_PLAN}.Join': _parse_join,

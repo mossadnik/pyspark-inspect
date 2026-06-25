@@ -9,6 +9,12 @@
   select a, c, sum(b) over (partition by c) as x
   from (select 1 as a, 2 as b, 3 as c)
 
+# filter
+- |-
+  select *
+  from (select 1 as a)
+  where a = 1
+
 # joins
 - |-
   select *
