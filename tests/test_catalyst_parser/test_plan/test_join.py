@@ -16,6 +16,16 @@ def inner_join(parsed_sql):
     return load_catalyst_plan(parsed_sql.get(sql)).children[0]
 
 
+@pytest.fixture(scope='module')
+def cross_join(parsed_sql):
+    sql = """
+        select *
+        from (select 1 as a) s
+        cross join (select 1 as b) t
+    """
+    return load_catalyst_plan(parsed_sql.get(sql)).children[0]
+
+
 class Test_Join:
     def test_returns_Join(self, inner_join):
         actual = parse_plan(inner_join)
@@ -29,3 +39,7 @@ class Test_Join:
         actual = cast(P.Join, parse_plan(inner_join))
         assert isinstance(actual.on, E.Equals)
         assert set(cast(E.AttributeReference, c).name for c in actual.on.children) == {'a', 'b'}
+
+    def test_returns_CrossJoin_for_cross_join(self, cross_join):
+        actual = parse_plan(cross_join)
+        assert isinstance(actual, P.CrossJoin)

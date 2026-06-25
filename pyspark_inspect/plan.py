@@ -51,9 +51,14 @@ class Filter(UnaryPlan):
 
 @dataclass(frozen=True)
 class Join(BinaryPlan):
-    """A left/right/inner/outer/cross join."""
+    """A join with join condition."""
     on: Expression
     how: tp.Literal['left', 'right', 'inner', 'outer', 'left-anti', 'left-semi']
+
+
+@dataclass(frozen=True)
+class CrossJoin(BinaryPlan):
+    """A join without join condition."""
 
 
 @dataclass(frozen=True)

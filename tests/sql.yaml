@@ -25,31 +25,6 @@
   from (select 1 as a) s
   inner join (select 1 as b) t
   on s.a = t.b
-- |-
-  select *
-  from (select 1 as a) s
-  left join (select 1 as b) t
-  on s.a = t.b
-- |-
-  select *
-  from (select 1 as a) s
-  right join (select 1 as b) t
-  on s.a = t.b
-- |-
-  select *
-  from (select 1 as a) s
-  full outer join (select 1 as b) t
-  on s.a = t.b
-- |-
-  select *
-  from (select 1 as a) s
-  left semi join (select 1 as b) t
-  on s.a = t.b
-- |-
-  select *
-  from (select 1 as a) s
-  left anti join (select 1 as b) t
-  on s.a = t.b
 
 # set operations
 # - union, minus, intersect

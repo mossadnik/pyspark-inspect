@@ -93,8 +93,10 @@ def _parse_window(plan: CatalystPlan, children: list[P.Plan]) -> P.Project:
     return P.Project(child=child.child, columns=columns)
 
 
-def _parse_join(plan: CatalystPlan, children: list[P.Plan]) -> P.Join:
+def _parse_join(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
     how = JOIN_TYPE[plan.data['joinType']['object']]
+    if how == 'cross':
+        return P.CrossJoin(left=children[0], right=children[1])
     on = parse_expression(load_catalyst_plan(plan.data['condition']))
     return P.Join(left=children[0], right=children[1], on=on, how=how)
 
@@ -180,6 +182,7 @@ def _skip_unary(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
 LOGICAL_PLAN = 'org.apache.spark.sql.catalyst.plans.logical'
 
 JOIN_TYPE = {
+    'org.apache.spark.sql.catalyst.plans.Cross$': 'cross',
     'org.apache.spark.sql.catalyst.plans.Inner$': 'inner',
     'org.apache.spark.sql.catalyst.plans.LeftOuter$': 'left',
     'org.apache.spark.sql.catalyst.plans.RightOuter$': 'right',
@@ -210,6 +213,7 @@ PLAN_PARSER: dict[str, tp.Callable[[CatalystPlan, list[P.Plan]], P.Plan]] = {
     f'{LOGICAL_PLAN}.Repartition': _skip_unary,
     f'{LOGICAL_PLAN}.RepartitionByExpression': _skip_unary,
     f'{LOGICAL_PLAN}.Sort': _skip_unary,
+    f'{LOGICAL_PLAN}.ResolvedHint': _skip_unary,
 }
 
 
