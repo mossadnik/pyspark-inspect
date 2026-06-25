@@ -3,7 +3,7 @@ name = "pyspark-inspect"
 version = "0.1.0"
 description = "Inspect pyspark query plans"
 authors = [
-    {name = "Matthias Ossadnik",email = "ossadnik.matthias@gmail.com"}
+    "Matthias Ossadnik <ossadnik.matthias@gmail.com>"
 ]
 classifiers = [
     "Development Status :: 3 - Alpha"
