@@ -13,7 +13,7 @@ import pyspark_inspect.plan as P
 
 
 class Test_Window:
-    @pytest.fixture(scope='class')
+    @pytest.fixture
     def window(self, parsed_sql):
         sql = """
             select a, c, sum(b) over (partition by c) as x
@@ -28,3 +28,9 @@ class Test_Window:
     def test_adds_window_expressions_to_project_list(self, window):
         actual = cast(P.Project, parse_plan(window))
         assert {getattr(c, 'name') for c in actual.columns} == {'a', 'b', 'c', 'x'}
+
+    def test_accepts_projectList_format(self, window):
+        """Test incomplete, only tests naming not column removal."""
+        window.data['projectList'] = window.data.pop('windowExpressions')
+        actual = parse_plan(window)
+        assert isinstance(actual, P.Project)

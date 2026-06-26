@@ -116,12 +116,7 @@ def _parse_window(plan: CatalystPlan, children: list[P.Plan]) -> P.Project:
         ]
     else:
         raise KeyError('Cannot parse Window: window expressions not found.')
-
-    columns = tuple([
-        *child.columns,
-        *[parse_expression(load_catalyst_plan(p)) for p in plan.data['windowExpressions']],
-    ])
-    return P.Project(child=child.child, columns=columns)
+    return P.Project(child=child.child, columns=tuple([*child.columns, *columns]))
 
 
 def _parse_join(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
