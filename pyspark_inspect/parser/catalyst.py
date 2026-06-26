@@ -8,6 +8,10 @@ from pyspark.sql import DataFrame, Column, types as T
 from pyspark_inspect import plan as P, expression as E
 
 
+LOGICAL_PLAN = 'org.apache.spark.sql.catalyst.plans.logical'
+EXPRESSIONS = 'org.apache.spark.sql.catalyst.expressions'
+
+
 @dataclass
 class CatalystPlan:
     children: list['CatalystPlan']
@@ -85,7 +89,34 @@ def _parse_project(plan: CatalystPlan, children: list[P.Plan]) -> P.Project:
 
 
 def _parse_window(plan: CatalystPlan, children: list[P.Plan]) -> P.Project:
+    """Parse window plan stage.
+
+    Supported versions
+
+    - projectList (v2, also seen on DataBricks v3.5): all columns.
+    - windowExpressions (v3+): Only window expressions
+
+    When encountering projectList, drop all AttributeReference. Result is same as windowExpressions
+    """
     child = tp.cast(P.Project, children[0])
+    if 'windowExpressions' in plan.data:
+        columns = [
+            parse_expression(load_catalyst_plan(c))
+            for c in plan.data['windowExpressions']
+        ]
+    elif 'projectList' in plan.data:
+        columns = [
+            load_catalyst_plan(c)
+            for c in plan.data['projectList']
+        ]
+        columns = [
+           parse_expression(c)
+           for c in columns
+           if c.class_name != f'{EXPRESSIONS}.AttributeReference'
+        ]
+    else:
+        raise KeyError('Cannot parse Window: window expressions not found.')
+
     columns = tuple([
         *child.columns,
         *[parse_expression(load_catalyst_plan(p)) for p in plan.data['windowExpressions']],
@@ -179,7 +210,6 @@ def _skip_unary(plan: CatalystPlan, children: list[P.Plan]) -> P.Plan:
     return children[0]
 
 
-LOGICAL_PLAN = 'org.apache.spark.sql.catalyst.plans.logical'
 
 JOIN_TYPE = {
     'org.apache.spark.sql.catalyst.plans.Cross$': 'cross',
@@ -271,7 +301,7 @@ def _parse_unary(cls: type) -> tp.Callable:
 
 
 EXPRESSION_PARSER: dict[str, tp.Callable[[CatalystPlan, list[E.Expression]], E.Expression]] = {
-    'org.apache.spark.sql.catalyst.expressions.Alias': _parse_expression_alias,
+    f'{EXPRESSIONS}.Alias': _parse_expression_alias,
     'org.apache.spark.sql.catalyst.expressions.Coalesce': _parse_variadic(E.Coalesce),
     'org.apache.spark.sql.catalyst.expressions.AttributeReference': _parse_attribute_reference,
     'org.apache.spark.sql.catalyst.expressions.And': _parse_binary(E.And),
