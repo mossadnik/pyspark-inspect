@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyspark-inspect"
-version = "0.3.0"
+version = "0.3.1"
 description = "Inspect pyspark query plans"
 authors = [
     "Matthias Ossadnik <ossadnik.matthias@gmail.com>"
