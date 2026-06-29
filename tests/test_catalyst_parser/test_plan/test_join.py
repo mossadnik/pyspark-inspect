@@ -7,23 +7,25 @@ import pyspark_inspect.expression as E
 
 @pytest.fixture(scope='module')
 def inner_join(parsed_sql):
-    sql = """
+    """
         select *
         from (select 1 as a) s
         inner join (select 1 as b) t
         on s.a = t.b
     """
-    return load_catalyst_plan(parsed_sql.get(sql)).children[0]
+    tc = 'SQL_0005'
+    return load_catalyst_plan(parsed_sql.get(tc)).children[0]
 
 
 @pytest.fixture(scope='module')
 def cross_join(parsed_sql):
-    sql = """
+    """
         select *
         from (select 1 as a) s
         cross join (select 1 as b) t
     """
-    return load_catalyst_plan(parsed_sql.get(sql)).children[0]
+    tc = 'SQL_0004'
+    return load_catalyst_plan(parsed_sql.get(tc)).children[0]
 
 
 class Test_Join:

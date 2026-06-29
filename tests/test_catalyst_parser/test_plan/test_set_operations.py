@@ -6,32 +6,35 @@ import pyspark_inspect.plan as P
 
 @pytest.fixture(scope='module')
 def union_all(parsed_sql):
-    sql = """
+    """
         select 1 as a
         union all
         select 2 as a
     """
-    return load_catalyst_plan(parsed_sql.get(sql))
+    tc = 'SQL_0006'
+    return load_catalyst_plan(parsed_sql.get(tc))
 
 
 @pytest.fixture(scope='module')
 def except_all(parsed_sql):
-    sql = """
+    """
         select 1 as a
         except all
         select 2 as a
     """
-    return load_catalyst_plan(parsed_sql.get(sql))
+    tc = 'SQL_0007'
+    return load_catalyst_plan(parsed_sql.get(tc))
 
 
 @pytest.fixture(scope='module')
 def intersect_all(parsed_sql):
-    sql = """
+    """
         select 1 as a
         intersect all
         select 2 as a
     """
-    return load_catalyst_plan(parsed_sql.get(sql))
+    tc = 'SQL_0008'
+    return load_catalyst_plan(parsed_sql.get(tc))
 
 
 class Test_Union:

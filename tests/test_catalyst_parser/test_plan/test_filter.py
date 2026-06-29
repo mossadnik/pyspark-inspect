@@ -15,12 +15,13 @@ from pyspark_inspect.expression import Expression
 class Test_Window:
     @pytest.fixture(scope='class')
     def filter_(self, parsed_sql):
-        sql = """
+        """
             select *
             from (select 1 as a)
             where a = 1
         """
-        return load_catalyst_plan(parsed_sql.get(sql)).children[0]
+        tc = 'SQL_0003'
+        return load_catalyst_plan(parsed_sql.get(tc)).children[0]
 
     def test_returns_Filter(self, filter_):
         actual = parse_plan(filter_)

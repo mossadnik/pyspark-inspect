@@ -12,11 +12,12 @@ import pyspark_inspect.plan as P
 class Test_Distinct:
     @pytest.fixture(scope='class')
     def distinct(self, parsed_sql):
-        sql = """
+        """
             select distinct a
             from (select 1 as a, 2 as b)
         """
-        return load_catalyst_plan(parsed_sql.get(sql))
+        tc = 'SQL_0010'
+        return load_catalyst_plan(parsed_sql.get(tc))
 
     def test_returns_Distinct(self, distinct):
         actual = parse_plan(distinct)
@@ -26,10 +27,11 @@ class Test_Distinct:
 class Test_Limit:
     @pytest.fixture(scope='class')
     def limit(self, parsed_sql):
-        sql = """
+        """
             select 1 as a limit 1
         """
-        return load_catalyst_plan(parsed_sql.get(sql))
+        tc = 'SQL_0011'
+        return load_catalyst_plan(parsed_sql.get(tc))
 
     def test_global_limit(self, limit):
         actual = parse_plan(limit)

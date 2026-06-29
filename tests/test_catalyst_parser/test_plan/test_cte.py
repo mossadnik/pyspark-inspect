@@ -6,11 +6,12 @@ import pyspark_inspect.plan as P
 
 @pytest.fixture(scope='module')
 def simple(parsed_sql):
-    sql = """
+    """
         with t as (select 1 as a)
         select * from t
     """
-    return load_catalyst_plan(parsed_sql.get(sql))
+    tc = 'SQL_0001'
+    return load_catalyst_plan(parsed_sql.get(tc))
 
 
 class Test_CTERelationDef:

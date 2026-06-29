@@ -90,7 +90,7 @@ class Literal(Leaf):
 class AttributeReference(Leaf):
     name: str
     qualifier: tuple[str, ...]
-    attribute_id: str
+    attribute_id: str | int
 
     @property
     def qualified_name(self) -> str:

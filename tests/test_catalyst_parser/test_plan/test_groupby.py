@@ -13,12 +13,13 @@ import pyspark_inspect.plan as P
 class Test_Aggregate:
     @pytest.fixture(scope='class')
     def aggregate(self, parsed_sql):
-        sql = """
+        """
             select a, count(*) as b
             from (select 1 as a)
             group by a
         """
-        return load_catalyst_plan(parsed_sql.get(sql))
+        tc = 'SQL_0009'
+        return load_catalyst_plan(parsed_sql.get(tc))
 
     def test_returns_Aggregate(self, aggregate):
         actual = parse_plan(aggregate)

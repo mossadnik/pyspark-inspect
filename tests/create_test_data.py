@@ -8,11 +8,13 @@ if __name__ == '__main__':
     spark = SparkSession.builder.getOrCreate()
 
     with open('./sql.yaml') as f:
-        sqls = yaml.load(f, Loader=yaml.FullLoader)
+        test_cases = yaml.load(f, Loader=yaml.FullLoader)
 
     res = {}
-    for sql in sqls:
-        res[sql] = get_dataframe_plan(spark.sql(sql))
+    for tc in test_cases:
+        sql = tc['sql']
+        tc_id = tc['id']
+        res[tc_id] = get_dataframe_plan(spark.sql(sql))
 
     with open('./sql-plan.json', 'w') as f:
         json.dump(res, f)
