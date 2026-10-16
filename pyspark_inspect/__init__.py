@@ -1,9 +1,9 @@
-from .api import inspect_dataframe
+from .api import inspect_column
 
 
 __all__ = [
-    'inspect_dataframe'
+    'inspect_column'
 ]
 
 
-__version__ = '0.3.1'
+__version__ = '0.4.0'

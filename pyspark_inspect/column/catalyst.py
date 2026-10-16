@@ -1,0 +1,154 @@
+"""Parse Catalyst JSON plan into Python data structures."""
+
+import json
+import typing as tp
+from dataclasses import dataclass
+
+from pyspark.errors import PySparkAttributeError
+from pyspark.sql import Column
+
+from pyspark_inspect.column import expression as E
+
+
+LOGICAL_PLAN = 'org.apache.spark.sql.catalyst.plans.logical'
+EXPRESSIONS = 'org.apache.spark.sql.catalyst.expressions'
+
+
+@dataclass
+class CatalystPlan:
+    children: list['CatalystPlan']
+    data: dict[str, tp.Any]
+
+    @property
+    def class_name(self) -> str:
+        return self.data['class']
+
+
+def add_node(stack, plan: CatalystPlan, num_children: int):
+    if num_children > 0 or not stack:
+        stack.append((plan, num_children))
+    else:
+        top, num_children = stack[-1]
+        top.children.append(plan)
+        if len(top.children) == num_children and len(stack) > 0:
+            stack.pop()
+            add_node(stack, top, 0)
+
+
+def get_column_expression(c: Column) -> str:
+    """Get Catalyst json representation of a column expression."""
+    try:
+        jc = c._jc
+    except PySparkAttributeError:
+        raise NotImplementedError('Cannot retrieve query plan from JVM. Are you using Spark Connect?')
+    return jc.expr().toJSON()
+
+
+def load_catalyst_plan(plan: str | list) -> CatalystPlan:
+    """Load Catalyst plan string or parsed JSON into raw parse tree."""
+    if isinstance(plan, str):
+        plan = tp.cast(list, json.loads(plan))
+    stack: list[tuple[CatalystPlan, int]] = []
+    for item in plan:
+        num_children = item['num-children']
+        node = CatalystPlan(
+            children=[],
+            data=item
+        )
+        add_node(stack, node, num_children)
+    assert len(stack) == 1
+    return stack[0][0]
+
+
+
+def parse_catalyst_column(col: Column) -> E.Expression:
+    expr = get_column_expression(col)
+    plan = load_catalyst_plan(expr)
+    return parse_catalyst_expression(plan)
+
+
+def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
+    children = [parse_catalyst_expression(c) for c in expr.children]
+
+    if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute':
+        return E.ColumnReference('.'.join(parse_array_string(expr.data['nameParts'])))
+
+    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.Alias':
+        return E.ColumnAlias(
+            _alias=(expr.data['name'],),
+            child=children[0]
+        )
+
+    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.Literal':
+        value = expr.data['value']
+        data_type = expr.data['dataType']
+        if data_type == 'integer':
+            value = int(value)
+        return E.Literal(value)
+
+    elif expr.class_name in RESOLVED_FUNCTION:
+        return E.Function(
+            RESOLVED_FUNCTION[expr.class_name],
+            args=tuple(children)
+        )
+
+    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression':
+        return parse_catalyst_expression(expr.children[0])
+
+    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.CaseWhen':
+        branches = [
+            (parse_catalyst_expression(b['_1']), parse_catalyst_expression(b['_2']))
+            for b in expr.data['branches']
+        ]
+        otherwise = expr.data.get('elseValue')
+        if otherwise is not None:
+            otherwise = parse_catalyst_expression(otherwise)
+        return E.CaseWhen(branches=tuple(branches), otherwise=otherwise)
+    else:
+        return E.UnknownExpression(expr.class_name, ())
+
+
+def parse_array_string(s: str) -> tuple[str, ...]:
+    """split comma separated array.
+
+    Note that not all values can be parsed reliably since values are not quoted.
+    """
+    stripped = s[1:-1]
+    if not stripped:
+        return ()
+    return tuple(stripped.split(', '))
+
+
+RESOLVED_FUNCTION = {
+    # predicate functions
+    'org.apache.spark.sql.catalyst.expressions.IsNotNull': 'isnotnull',
+    'org.apache.spark.sql.catalyst.expressions.IsNull': 'isnull',
+
+    # operators
+    'org.apache.spark.sql.catalyst.expressions.EqualTo': '==',
+    'org.apache.spark.sql.catalyst.expressions.Not': 'not',
+    'org.apache.spark.sql.catalyst.expressions.Or': 'or',
+    'org.apache.spark.sql.catalyst.expressions.And  ': 'and',
+    'org.apache.spark.sql.catalyst.expressions.Add': '+',
+    'org.apache.spark.sql.catalyst.expressions.Subtract': '-',
+    'org.apache.spark.sql.catalyst.expressions.Multiply': '*',
+    'org.apache.spark.sql.catalyst.expressions.Divide': '/',
+
+    # conditional functions
+    'org.apache.spark.sql.catalyst.expressions.Coalesce': 'coalesce',
+
+    # string functions
+    'org.apache.spark.sql.catalyst.expressions.Concat': 'concat',
+    'org.apache.spark.sql.catalyst.expressions.ConcatWs': 'concat_ws',
+    'org.apache.spark.sql.catalyst.expressions.Length': 'length',
+
+    # array functions
+    'org.apache.spark.sql.catalyst.expressions.Size': 'size',
+
+    # aggregate functions
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Average': 'avg',
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Count': 'count',
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Max': 'max',
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Min': 'min',
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': 'sum',
+}
