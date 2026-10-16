@@ -73,29 +73,29 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute':
         return E.ColumnReference('.'.join(parse_array_string(expr.data['nameParts'])))
 
-    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.Alias':
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.Alias':
         return E.ColumnAlias(
             _alias=(expr.data['name'],),
             child=children[0]
         )
 
-    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.Literal':
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.Literal':
         value = expr.data['value']
         data_type = expr.data['dataType']
         if data_type == 'integer':
             value = int(value)
         return E.Literal(value)
 
-    elif expr.class_name in RESOLVED_FUNCTION:
+    if expr.class_name in RESOLVED_FUNCTION:
         return E.Function(
             RESOLVED_FUNCTION[expr.class_name],
             args=tuple(children)
         )
 
-    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression':
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression':
         return parse_catalyst_expression(expr.children[0])
 
-    elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.CaseWhen':
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.CaseWhen':
         branches = [
             (
                 parse_catalyst_expression(load_catalyst_plan(b['_1'])),
@@ -106,8 +106,13 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         if otherwise is not None:
             otherwise = parse_catalyst_expression(load_catalyst_plan(otherwise))
         return E.CaseWhen(branches=tuple(branches), otherwise=otherwise)
-    else:
-        return E.UnknownExpression(expr.class_name, ())
+
+    if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedFunction':
+        name = UNRESOLVED_FUNCTION.get(expr.data['nameParts'])
+        if name is not None:
+            return E.Function(name=name, args=tuple(children))
+
+    return E.UnknownExpression(expr.class_name, tuple(children))
 
 
 def parse_array_string(s: str) -> tuple[str, ...]:
@@ -153,4 +158,10 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.aggregate.Max': 'max',
     'org.apache.spark.sql.catalyst.expressions.aggregate.Min': 'min',
     'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': 'sum',
+}
+
+
+UNRESOLVED_FUNCTION = {
+    '[=]': '==',
+    '[!]': 'not',
 }

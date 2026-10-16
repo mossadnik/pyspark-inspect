@@ -106,7 +106,7 @@ class CaseWhen(Expression):
 
     @property
     def children(self):
-        res = [b for b in self.branches for c in b]
+        res = [c for b in self.branches for c in b]
         if self.otherwise is None:
             return res
         return res + [self.otherwise]
