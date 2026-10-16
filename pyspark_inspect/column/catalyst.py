@@ -97,12 +97,14 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
 
     elif expr.class_name == 'org.apache.spark.sql.catalyst.expressions.CaseWhen':
         branches = [
-            (parse_catalyst_expression(b['_1']), parse_catalyst_expression(b['_2']))
+            (
+                parse_catalyst_expression(load_catalyst_plan(b['_1'])),
+                parse_catalyst_expression(load_catalyst_plan(b['_2'])),)
             for b in expr.data['branches']
         ]
         otherwise = expr.data.get('elseValue')
         if otherwise is not None:
-            otherwise = parse_catalyst_expression(otherwise)
+            otherwise = parse_catalyst_expression(load_catalyst_plan(otherwise))
         return E.CaseWhen(branches=tuple(branches), otherwise=otherwise)
     else:
         return E.UnknownExpression(expr.class_name, ())
@@ -125,14 +127,14 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.IsNull': 'isnull',
 
     # operators
+    'org.apache.spark.sql.catalyst.expressions.Add': '+',
+    'org.apache.spark.sql.catalyst.expressions.And': 'and',
+    'org.apache.spark.sql.catalyst.expressions.Divide': '/',
     'org.apache.spark.sql.catalyst.expressions.EqualTo': '==',
     'org.apache.spark.sql.catalyst.expressions.Not': 'not',
     'org.apache.spark.sql.catalyst.expressions.Or': 'or',
-    'org.apache.spark.sql.catalyst.expressions.And  ': 'and',
-    'org.apache.spark.sql.catalyst.expressions.Add': '+',
-    'org.apache.spark.sql.catalyst.expressions.Subtract': '-',
     'org.apache.spark.sql.catalyst.expressions.Multiply': '*',
-    'org.apache.spark.sql.catalyst.expressions.Divide': '/',
+    'org.apache.spark.sql.catalyst.expressions.Subtract': '-',
 
     # conditional functions
     'org.apache.spark.sql.catalyst.expressions.Coalesce': 'coalesce',
