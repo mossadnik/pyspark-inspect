@@ -33,3 +33,6 @@ dev = [
     "pyyaml (>=6.0.3,<7.0.0)",
     "pytest-subtests (>=0.15.0,<0.16.0)",
 ]
+
+[tool.databricks.environment]
+environment_version = '6'

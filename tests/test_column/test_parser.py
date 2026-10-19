@@ -197,44 +197,37 @@ def array_functions(spark_session):
 
 
 class Test_inspect_column:
-    def test_core_functions(self, core_functions, subtests):
+    def test_core_functions(self, core_functions):
         tcs = core_functions
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']
 
-    def test_predicate_functions(self, predicate_functions, subtests):
+    def test_predicate_functions(self, predicate_functions):
         tcs = predicate_functions
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']
 
-    def test_operators(self, operators, subtests):
+    def test_operators(self, operators):
         tcs = operators
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']
 
-    def test_conditional_functions(self, conditional_functions, subtests):
+    def test_conditional_functions(self, conditional_functions):
         tcs = conditional_functions
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']
 
-    def test_string_functions(self, string_functions, subtests):
+    def test_string_functions(self, string_functions):
         tcs = string_functions
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']
 
-    def test_array_functions(self, array_functions, subtests):
+    def test_array_functions(self, array_functions):
         tcs = array_functions
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']
 
-    def test_aggregate_functions(self, aggregate_functions, subtests):
+    def test_aggregate_functions(self, aggregate_functions):
         tcs = aggregate_functions
         for tc in tcs:
-            with subtests.test(msg=str(tc['col'])):
-                assert inspect_column(tc['col']) == tc['expected']
+            assert inspect_column(tc['col']) == tc['expected']

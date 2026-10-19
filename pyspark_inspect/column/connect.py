@@ -14,7 +14,7 @@ def parse_connect_expression(expr: cex.Expression) -> E.Expression:
         # TODO what does it mean to have multiple aliases?
         return E.ColumnAlias(
             _alias=tuple(expr._alias),
-            child=parse_connect_expression(expr.child)
+            child=parse_connect_expression(expr._child)
         )
     elif isinstance(expr, cex.UnresolvedFunction):
         name = FUNCTION_SYNONYM.get(expr._name, expr._name)
