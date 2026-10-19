@@ -8,7 +8,7 @@ from pyspark.errors import PySparkAttributeError
 from pyspark.sql import Column
 
 from pyspark_inspect.column import expression as E
-
+from pyspark_inspect.column.expression import FunctionName as F
 
 LOGICAL_PLAN = 'org.apache.spark.sql.catalyst.plans.logical'
 EXPRESSIONS = 'org.apache.spark.sql.catalyst.expressions'
@@ -58,7 +58,6 @@ def load_catalyst_plan(plan: str | list) -> CatalystPlan:
         add_node(stack, node, num_children)
     assert len(stack) == 1
     return stack[0][0]
-
 
 
 def parse_catalyst_column(col: Column) -> E.Expression:
@@ -128,40 +127,76 @@ def parse_array_string(s: str) -> tuple[str, ...]:
 
 RESOLVED_FUNCTION = {
     # predicate functions
-    'org.apache.spark.sql.catalyst.expressions.IsNotNull': 'isnotnull',
-    'org.apache.spark.sql.catalyst.expressions.IsNull': 'isnull',
+    'org.apache.spark.sql.catalyst.expressions.IsNotNull': F.isnotnull,
+    'org.apache.spark.sql.catalyst.expressions.IsNull': F.isnull,
 
     # operators
-    'org.apache.spark.sql.catalyst.expressions.Add': '+',
-    'org.apache.spark.sql.catalyst.expressions.And': 'and',
-    'org.apache.spark.sql.catalyst.expressions.Divide': '/',
-    'org.apache.spark.sql.catalyst.expressions.EqualTo': '==',
-    'org.apache.spark.sql.catalyst.expressions.Not': 'not',
-    'org.apache.spark.sql.catalyst.expressions.Or': 'or',
-    'org.apache.spark.sql.catalyst.expressions.Multiply': '*',
-    'org.apache.spark.sql.catalyst.expressions.Subtract': '-',
+    'org.apache.spark.sql.catalyst.expressions.Add': F.add,
+    'org.apache.spark.sql.catalyst.expressions.And': F.and_,
+    'org.apache.spark.sql.catalyst.expressions.Divide': F.truediv,
+    'org.apache.spark.sql.catalyst.expressions.EqualTo': F.eq,
+    'org.apache.spark.sql.catalyst.expressions.Not': F.not_,
+    'org.apache.spark.sql.catalyst.expressions.Or': F.or_,
+    'org.apache.spark.sql.catalyst.expressions.Multiply': F.mul,
+    'org.apache.spark.sql.catalyst.expressions.Subtract': F.sub,
 
     # conditional functions
-    'org.apache.spark.sql.catalyst.expressions.Coalesce': 'coalesce',
+    'org.apache.spark.sql.catalyst.expressions.Coalesce': F.coalesce,
 
     # string functions
-    'org.apache.spark.sql.catalyst.expressions.Concat': 'concat',
-    'org.apache.spark.sql.catalyst.expressions.ConcatWs': 'concat_ws',
-    'org.apache.spark.sql.catalyst.expressions.Length': 'length',
+    'org.apache.spark.sql.catalyst.expressions.Concat': F.concat,
+    'org.apache.spark.sql.catalyst.expressions.ConcatWs': F.concat_ws,
+    'org.apache.spark.sql.catalyst.expressions.Length': F.length,
+    'org.apache.spark.sql.catalyst.expressions.Lower': F.lower_,
+    'org.apache.spark.sql.catalyst.expressions.StringTrim': F.trim,
+    'org.apache.spark.sql.catalyst.expressions.Upper': F.upper_,
 
     # array functions
-    'org.apache.spark.sql.catalyst.expressions.Size': 'size',
+    'org.apache.spark.sql.catalyst.expressions.Size': F.size,
 
     # aggregate functions
-    'org.apache.spark.sql.catalyst.expressions.aggregate.Average': 'avg',
-    'org.apache.spark.sql.catalyst.expressions.aggregate.Count': 'count',
-    'org.apache.spark.sql.catalyst.expressions.aggregate.Max': 'max',
-    'org.apache.spark.sql.catalyst.expressions.aggregate.Min': 'min',
-    'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': 'sum',
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Average': F.avg,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Count': F.count_,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Max': F.max_,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Min': F.min_,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': F.sum_,
 }
 
 
+# Catalyst org.apache.spark.sql.catalyst.analysis.UnresolvedFunction
+# Seen on Databricks 3.5.2
 UNRESOLVED_FUNCTION = {
-    '[=]': '==',
-    '[!]': 'not',
+    # predicate functions
+    '[isnotnull]': F.isnotnull,
+    '[isNotNull]': F.isnotnull,
+    '[isNull]': F.isnull,
+    '[isnull]': F.isnull,
+
+    # operators
+    '[+]': F.add,
+    '[and]': F.and_,
+    '[=]': F.eq,
+    '[*]': F.mul,
+    '[!]': F.not_,
+    '[or]': F.or_,
+    '[-]': F.sub,
+    '[/]': F.truediv,
+
+    # conditional functions
+    '[coalesce]': F.coalesce,
+
+    # string functions
+    '[concat]': F.concat,
+    '[concat_ws]': F.concat_ws,
+    '[length]': F.length,
+
+    # aggregate functions
+    '[avg]': F.avg,
+    '[count]': F.count_,
+    '[max]': F.max_,
+    '[min]': F.min_,
+    '[sum]': F.sum_,
+
+    # array functions
+    '[size]': F.size,
 }

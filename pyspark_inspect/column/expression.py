@@ -1,9 +1,54 @@
 import operator as op
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
 
+import pyspark
 from pyspark.sql import Column
 from pyspark.sql import functions as F, Window
+
+
+class FunctionName(StrEnum):
+    # operators
+    eq = '=='
+    not_ = 'not'
+    and_ = 'and'
+    or_ = 'or'
+    add = '+'
+    sub = '-'
+    mul = '*'
+    truediv = '/'
+
+    # predicate functions
+    isnotnull = 'isnotnull'
+    isnull = 'isnull'
+
+    # conditional functions
+    coalesce = 'coalesce'
+
+    # string functions
+    concat = 'concat'
+    concat_ws = 'concat_ws'
+    length = 'length'
+    lower_ = 'lower'
+    trim = 'trim'
+    upper_ = 'upper'
+
+    # aggregate functions
+    avg = 'avg'
+    count_ = 'count'
+    max_ = 'max'
+    min_ = 'min'
+    sum_ = 'sum'
+
+    # array functions
+    size = 'size'
+
+
+# Enforce python value when running on pyspark 3.X.X
+FORCE_VALUE_SPARK_3XX = {
+    FunctionName.concat_ws: {0,},
+}
 
 
 @dataclass
@@ -86,7 +131,7 @@ class SortOrder(Expression):
 
 @dataclass
 class Function(Expression):
-    name: str
+    name: FunctionName
     args: tuple[Expression, ...]
 
     @property
@@ -97,7 +142,20 @@ class Function(Expression):
         func = RESOLVED_FUNCTION.get(self.name)
         if not func:
             raise NotImplementedError(f'Function {self.name} is not supported')
-        return func(*[a.to_col() for a in self.args])
+        args = []
+        if pyspark.__version__.startswith('3'):
+            force_value = FORCE_VALUE_SPARK_3XX.get(self.name, set())
+        else:
+            force_value = set()
+        for i, a in enumerate(self.args):
+            if i in force_value:
+                if not isinstance(a, Literal):
+                    raise ValueError(f'Argument {i} of function {self.name} must be a Python value for pyspark < 4.0.0.')
+                args.append(a.value)
+            else:
+                args.append(a.to_col())
+        return func(*args)
+
 
 @dataclass
 class CaseWhen(Expression):
@@ -154,29 +212,37 @@ class UserDefinedFunction(Expression):
 
 RESOLVED_FUNCTION = {
     # operators
-    '==': op.eq,
-    'not': op.inv,
-    'and': op.and_,
-    'or': op.or_,
-    '+': op.add,
-    '-': op.sub,
-    '*': op.mul,
-    '/': op.truediv,
+    FunctionName.eq: op.eq,
+    FunctionName.not_: op.inv,
+    FunctionName.and_: op.and_,
+    FunctionName.or_: op.or_,
+    FunctionName.add: op.add,
+    FunctionName.sub: op.sub,
+    FunctionName.mul: op.mul,
+    FunctionName.truediv: op.truediv,
+
     # conditional functions
-    'coalesce': F.coalesce,
+    FunctionName.coalesce: F.coalesce,
+
     # predicate functions
-    'isnull': F.isnull,
-    'isnotnull': F.isnotnull,
+    FunctionName.isnull: F.isnull,
+    FunctionName.isnotnull: F.isnotnull,
+
     # string functions
-    'concat': F.concat,
-    'concat_ws': F.concat_ws,
-    'length': F.length,
+    FunctionName.concat: F.concat,
+    FunctionName.concat_ws: F.concat_ws,
+    FunctionName.length: F.length,
+    FunctionName.lower_: F.lower,
+    FunctionName.trim: F.trim,
+    FunctionName.upper_: F.upper,
+
     # aggregate functions
-    'avg': F.avg,
-    'count': F.count,
-    'max': F.max,
-    'min': F.min,
-    'sum': F.sum,
+    FunctionName.avg: F.avg,
+    FunctionName.count_: F.count,
+    FunctionName.max_: F.max,
+    FunctionName.min_: F.min,
+    FunctionName.sum_: F.sum,
+
     # array functions
-    'size': F.size,
+    FunctionName.size: F.size,
 }
