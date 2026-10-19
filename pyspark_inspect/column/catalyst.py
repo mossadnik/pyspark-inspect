@@ -195,8 +195,14 @@ UNRESOLVED_FUNCTION = {
     '[concat]': F.concat,
     '[concat_ws]': F.concat_ws,
     '[length]': F.length,
+    '[lower]': F.lower_,
+    '[trim]': F.trim,
+    '[upper]': F.upper_,
 
     # mathematical functions
+    '[abs]': F.abs_,
+    '[greatest]': F.greatest,
+    '[least]': F.least,
     '[negative]': F.negative,
 
     # aggregate functions
