@@ -34,6 +34,12 @@ class FunctionName(StrEnum):
     trim = 'trim'
     upper_ = 'upper'
 
+    # mathematical functions
+    abs_ = 'abs'
+    greatest = 'greatest'
+    least = 'least'
+    negative = 'negative'
+
     # aggregate functions
     avg = 'avg'
     count_ = 'count'
@@ -89,7 +95,7 @@ class Literal(Expression):
 
 @dataclass
 class ColumnAlias(Expression):
-    _alias: tuple[str]
+    _alias: tuple[str, ...]
     child: Expression
 
     @property
@@ -183,8 +189,8 @@ class CaseWhen(Expression):
 class WindowExpression(Expression):
     # TODO add frame
     window_function: Expression
-    partition_by: tuple[Expression]
-    order_by: tuple[Expression]
+    partition_by: tuple[Expression, ...]
+    order_by: tuple[Expression, ...]
 
     @property
     def children(self):
@@ -203,7 +209,7 @@ class WindowExpression(Expression):
 @dataclass
 class UserDefinedFunction(Expression):
     function_name: str
-    args: tuple[Expression]
+    args: tuple[Expression, ...]
 
     @property
     def children(self):
@@ -235,6 +241,12 @@ RESOLVED_FUNCTION = {
     FunctionName.lower_: F.lower,
     FunctionName.trim: F.trim,
     FunctionName.upper_: F.upper,
+
+    # mathematical functions
+    FunctionName.abs_: F.abs,
+    FunctionName.greatest: F.greatest,
+    FunctionName.least: F.least,
+    FunctionName.negative: F.negative,
 
     # aggregate functions
     FunctionName.avg: F.avg,

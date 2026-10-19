@@ -35,6 +35,12 @@ text = E.Literal('a')
     (F.trim, (a,)),
     (F.upper_, (a,)),
 
+    # mathematical functions
+    (F.abs_, (a,)),
+    (F.greatest, (a, b)),
+    (F.least, (a, b)),
+    (F.negative, (a,)),
+
     # aggregate functions
     (F.avg, (a,)),
     (F.count_, (a,)),

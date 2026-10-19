@@ -139,6 +139,7 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.Or': F.or_,
     'org.apache.spark.sql.catalyst.expressions.Multiply': F.mul,
     'org.apache.spark.sql.catalyst.expressions.Subtract': F.sub,
+    'org.apache.spark.sql.catalyst.expressions.UnaryMinus': F.negative,
 
     # conditional functions
     'org.apache.spark.sql.catalyst.expressions.Coalesce': F.coalesce,
@@ -150,6 +151,11 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.Lower': F.lower_,
     'org.apache.spark.sql.catalyst.expressions.StringTrim': F.trim,
     'org.apache.spark.sql.catalyst.expressions.Upper': F.upper_,
+
+    # mathematical functions
+    'org.apache.spark.sql.catalyst.expressions.Abs': F.abs_,
+    'org.apache.spark.sql.catalyst.expressions.Least': F.least,
+    'org.apache.spark.sql.catalyst.expressions.Greatest': F.greatest,
 
     # array functions
     'org.apache.spark.sql.catalyst.expressions.Size': F.size,
@@ -189,6 +195,9 @@ UNRESOLVED_FUNCTION = {
     '[concat]': F.concat,
     '[concat_ws]': F.concat_ws,
     '[length]': F.length,
+
+    # mathematical functions
+    '[negative]': F.negative,
 
     # aggregate functions
     '[avg]': F.avg,
