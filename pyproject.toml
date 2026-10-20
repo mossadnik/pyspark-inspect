@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyspark-inspect"
-version = "0.4.5"
+version = "0.5.0"
 description = "pyspark ASTs in Python"
 authors = [
     "Matthias Ossadnik <ossadnik.matthias@gmail.com>"

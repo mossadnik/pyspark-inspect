@@ -4,8 +4,8 @@ from enum import StrEnum
 from typing import Any
 
 import pyspark
-from pyspark.sql import Column
-from pyspark.sql import functions as F, Window
+from pyspark.sql import Column, Window
+from pyspark.sql import functions as F
 
 
 class FunctionName(StrEnum):
@@ -57,6 +57,7 @@ class FunctionName(StrEnum):
 # Enforce python value when running on pyspark 3.X.X
 FORCE_VALUE_SPARK_3XX = {
     FunctionName.concat_ws: {0,},
+    FunctionName.first: {1,},
 }
 
 

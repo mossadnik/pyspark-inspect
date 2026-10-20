@@ -7,6 +7,7 @@ from pyspark_inspect.column.expression import FunctionName as F
 a, b, c = map(E.ColumnReference, 'abc')
 number = E.Literal(1)
 text = E.Literal('a')
+boolean = E.Literal(True)
 
 
 @pytest.mark.parametrize('name, args', [
@@ -46,7 +47,7 @@ text = E.Literal('a')
     (F.count_, (a,)),
     (F.collect_list, (a,)),
     (F.collect_set, (a,)),
-    (F.first, (a,)),
+    (F.first, (a, boolean)),
     (F.max_, (a,)),
     (F.min_, (a,)),
     (F.sum_, (a,)),

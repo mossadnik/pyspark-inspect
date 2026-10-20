@@ -86,10 +86,15 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         return E.Literal(value)
 
     if expr.class_name in RESOLVED_FUNCTION:
-        return E.Function(
-            RESOLVED_FUNCTION[expr.class_name],
-            args=tuple(children)
-        )
+        name = RESOLVED_FUNCTION[expr.class_name]
+        if name == F.first:
+            ignore_nulls = expr.data.get('ignoreNulls')
+            if ignore_nulls is not None and len(children) == 1:
+                args = (children[0], E.Literal(ignore_nulls))
+        else:
+            args = tuple(children)
+
+        return E.Function(name, args=args)
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression':
         return parse_catalyst_expression(expr.children[0])
@@ -211,6 +216,9 @@ UNRESOLVED_FUNCTION = {
     # aggregate functions
     '[avg]': F.avg,
     '[count]': F.count_,
+    '[collect_list]': F.collect_list,
+    '[collect_set]': F.collect_set,
+    '[first]': F.first,
     '[max]': F.max_,
     '[min]': F.min_,
     '[sum]': F.sum_,
