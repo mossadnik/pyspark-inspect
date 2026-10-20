@@ -42,7 +42,10 @@ class FunctionName(StrEnum):
 
     # aggregate functions
     avg = 'avg'
+    collect_list = 'collect_list'
+    collect_set = 'collect_set'
     count_ = 'count'
+    first = 'first'
     max_ = 'max'
     min_ = 'min'
     sum_ = 'sum'
@@ -250,6 +253,9 @@ RESOLVED_FUNCTION = {
 
     # aggregate functions
     FunctionName.avg: F.avg,
+    FunctionName.collect_list: F.collect_list,
+    FunctionName.collect_set: F.collect_set,
+    FunctionName.first: F.first,
     FunctionName.count_: F.count,
     FunctionName.max_: F.max,
     FunctionName.min_: F.min,

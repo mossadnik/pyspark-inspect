@@ -44,6 +44,9 @@ text = E.Literal('a')
     # aggregate functions
     (F.avg, (a,)),
     (F.count_, (a,)),
+    (F.collect_list, (a,)),
+    (F.collect_set, (a,)),
+    (F.first, (a,)),
     (F.max_, (a,)),
     (F.min_, (a,)),
     (F.sum_, (a,)),

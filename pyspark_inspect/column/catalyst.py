@@ -163,6 +163,9 @@ RESOLVED_FUNCTION = {
     # aggregate functions
     'org.apache.spark.sql.catalyst.expressions.aggregate.Average': F.avg,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Count': F.count_,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.CollectList': F.collect_list,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.CollectSet': F.collect_set,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.First': F.first,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Max': F.max_,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Min': F.min_,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': F.sum_,
