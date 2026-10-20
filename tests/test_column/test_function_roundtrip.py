@@ -60,3 +60,10 @@ def test_function_roundtrip(name, args, spark_session):
     col = expr.to_col()
     actual = inspect_column(col)
     assert actual == expr
+
+
+def test_GetItem_roundtrip(spark_session):
+    expr = E.GetItem(child=a, key=b)
+    col = expr.to_col()
+    actual = inspect_column(col)
+    assert actual == expr

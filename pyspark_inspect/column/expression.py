@@ -10,13 +10,13 @@ from pyspark.sql import functions as F
 
 class FunctionName(StrEnum):
     # operators
-    eq = '=='
-    not_ = 'not'
-    and_ = 'and'
-    or_ = 'or'
     add = '+'
-    sub = '-'
+    and_ = 'and'
+    eq = '=='
     mul = '*'
+    not_ = 'not'
+    or_ = 'or'
+    sub = '-'
     truediv = '/'
 
     # predicate functions
@@ -113,6 +113,20 @@ class ColumnAlias(Expression):
 
     def to_col(self):
         return self.child.to_col().alias(self.name)
+
+
+@dataclass
+class GetItem(Expression):
+    """Apply __getitem__ to Column."""
+    child: Expression
+    key: Expression
+
+    @property
+    def children(self):
+        return [self.child, self.key]
+
+    def to_col(self):
+        return self.child.to_col()[self.key.to_col()]
 
 
 @dataclass

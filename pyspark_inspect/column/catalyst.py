@@ -116,6 +116,11 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         if name is not None:
             return E.Function(name=name, args=tuple(children))
 
+    if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedExtractValue':
+        child = children[expr.data['child']]
+        key = children[expr.data['extraction']]
+        return E.GetItem(child=child, key=key)
+
     return E.UnknownExpression(expr.class_name, tuple(children))
 
 
