@@ -1,3 +1,5 @@
+import datetime
+import itertools as it
 import pytest
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
@@ -26,75 +28,55 @@ def core_functions(spark_session):
     ]
 
 
+class Test_Literal:
+    def assert_value_preserved(self, value):
+        res = inspect_column(F.lit(value))
+        assert isinstance(res, Literal)
+        assert res.value == value
+
+    def test_string_value(self, spark_session):
+        self.assert_value_preserved('Abc123!')
+
+    def test_bool_value(self, spark_session):
+        self.assert_value_preserved(True)
+        self.assert_value_preserved(False)
+
+    def test_int_value(self, spark_session):
+        self.assert_value_preserved(12345)
+
+    def test_date_value(self, spark_session):
+        self.assert_value_preserved(datetime.date(1999, 9, 9))
+
+    def test_datetime_value(self, spark_session):
+        self.assert_value_preserved(datetime.datetime(1999, 9, 9, 11, 11, 11, 123456))
+
+    def test_None(self, spark_session):
+        self.assert_value_preserved(None)
 
 
-@pytest.fixture
-def predicate_functions(spark_session):
-    return [
-        {
-            'col': F.isnotnull('a'),
-            'expected': Function(name='isnotnull', args=(ColumnReference('a'),)),
-            'values': {'a': 1},
-        },
-        {
-            'col': F.col('a').isNotNull(),
-            'expected': Function(name='isnotnull', args=(ColumnReference('a'),)),
-            'values': {'a': 1},
-        },
-        {
-            'col': F.isnull('a'),
-            'expected': Function(name='isnull', args=(ColumnReference('a'),)),
-            'values': {'a': 1},
-        },
-        {
-            'col': F.col('a').isNull(),
-            'expected': Function(name='isnull', args=(ColumnReference('a'),)),
-            'values': {'a': 1},
-        },
-    ]
+class Test_synonyms:
+    """Sometimes synonyms are represented differently, check that they unified."""
+    def assert_same(self, *cols):
+        for this, that in it.pairwise(cols):
+            assert inspect_column(this) == inspect_column(that)
 
+    def test_isnotnull(self, spark_session):
+        self.assert_same(
+            F.isnotnull('a'),
+            F.col('a').isNotNull()
+        )
 
-@pytest.fixture
-def operators(spark_session):
-    a, b = map(F.col, 'ab')
-    ref_a, ref_b = map(ColumnReference, 'ab')
-    return [
-        {
-            'col': a == b,
-            'expected': Function(name='==', args=(ref_a, ref_b)),
-        },
-        {
-            'col': a != b,
-            'expected': Function(
-                name='not',
-                args=(Function(name='==', args=(ref_a, ref_b)),)
-            ),
-        },
-        {
-            'col': a | b,
-            'expected': Function(name='or', args=(ref_a, ref_b)),
-        },
-        {
-            'col': a & b,
-            'expected': Function(name='and', args=(ref_a, ref_b)),
-        },
-        {
-            'col': a + b,
-            'expected': Function(name='+', args=(ref_a, ref_b)),
-        },
-        {
-            'col': a - b,
-            'expected': Function(name='-', args=(ref_a, ref_b)),
-        },
-        {
-            'col': a * b,
-            'expected': Function(name='*', args=(ref_a, ref_b)),
-        },
-        {
-            'col': a / b,
-            'expected': Function(name='/', args=(ref_a, ref_b)),
-        },
-    ]
+    def test_isnull(self, spark_session):
+        self.assert_same(
+            F.isnull('a'),
+            F.col('a').isNull()
+        )
+
+    def test_neq(self, spark_session):
+        self.assert_same(
+            F.col('a') != F.col('b'),
+            ~(F.col('a') == F.col('b')),
+        )
 
 
 @pytest.fixture
@@ -104,7 +86,7 @@ def conditional_functions(spark_session):
     return [
         {
             'col': F.coalesce(a, b),
-            'expected': Function(name='coalesce', args=(ref_a, ref_b)),
+            'expected': Function(name=FunctionName.coalesce, args=(ref_a, ref_b)),
             'values': {'a': 1, 'b': 2},
         },
         {
@@ -124,110 +106,13 @@ def conditional_functions(spark_session):
     ]
 
 
-@pytest.fixture
-def string_functions(spark_session):
-    a, b = map(F.col, 'ab')
-    ref_a, ref_b = map(ColumnReference, 'ab')
-    return [
-        {
-            'col': F.concat(a, b),
-            'expected': Function(name='concat', args=(ref_a, ref_b)),
-            'values': {'a': 'a', 'b': 'b'},
-        },
-        {
-            'col': F.concat_ws('-', a, b),
-            'expected': Function(name='concat_ws', args=(Literal('-'), ref_a, ref_b)),
-            'values': {'a': 'a', 'b': 'b'},
-        },
-        {
-            'col': F.length(a),
-            'expected': Function(name='length', args=(ref_a,))
-        },
-    ]
-
-
-@pytest.fixture
-def array_functions(spark_session):
-    ref_a, ref_b = map(ColumnReference, 'ab')
-    return [
-        {
-            'col': F.size('a'),
-            'expected': Function(name='size', args=(ref_a,)),
-            'values': {'a': [1, 2]},
-            'schema': [T.StructField('a', T.ArrayType(T.IntegerType()))],
-        },
-    ]
-
-@pytest.fixture
-def aggregate_functions(spark_session):
-    ref_a, _ = map(ColumnReference, 'ab')
-    return [
-        {
-            'col': F.avg('a'),
-            'expected': Function(name='avg', args=(ref_a,)),
-        },
-        {
-            'col': F.count('a'),
-            'expected': Function(name='count', args=(ref_a,)),
-        },
-        {
-            'col': F.max('a'),
-            'expected': Function(name='max', args=(ref_a,)),
-        },
-        {
-            'col': F.min('a'),
-            'expected': Function(name='min', args=(ref_a,)),
-        },
-        {
-            'col': F.sum('a'),
-            'expected': Function(name='sum', args=(ref_a,)),
-        },
-    ]
-
-@pytest.fixture
-def array_functions(spark_session):
-    return [
-        {
-            'col': F.size('a'),
-            'expected': Function(name='size', args=(ColumnReference('a'),)),
-            'values': {'a': [1, 2]},
-            'schema': [T.StructField('a', T.ArrayType(T.IntegerType()))],
-        },
-    ]
-
-
 class Test_inspect_column:
     def test_core_functions(self, core_functions):
         tcs = core_functions
         for tc in tcs:
             assert inspect_column(tc['col']) == tc['expected']
 
-    def test_predicate_functions(self, predicate_functions):
-        tcs = predicate_functions
-        for tc in tcs:
-            assert inspect_column(tc['col']) == tc['expected']
-
-    def test_operators(self, operators):
-        tcs = operators
-        for tc in tcs:
-            assert inspect_column(tc['col']) == tc['expected']
-
     def test_conditional_functions(self, conditional_functions):
         tcs = conditional_functions
-        for tc in tcs:
-            assert inspect_column(tc['col']) == tc['expected']
-
-    def test_string_functions(self, string_functions):
-        tcs = string_functions
-        for tc in tcs:
-            assert inspect_column(tc['col']) == tc['expected']
-
-    def test_array_functions(self, array_functions):
-        tcs = array_functions
-        for tc in tcs:
-            assert inspect_column(tc['col']) == tc['expected']
-
-    def test_aggregate_functions(self, aggregate_functions):
-        tcs = aggregate_functions
         for tc in tcs:
             assert inspect_column(tc['col']) == tc['expected']

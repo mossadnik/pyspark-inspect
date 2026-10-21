@@ -1,4 +1,5 @@
 import operator as op
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
@@ -29,29 +30,68 @@ class FunctionName(StrEnum):
     # string functions
     concat = 'concat'
     concat_ws = 'concat_ws'
+    format_string = 'format_string'
     length = 'length'
     lower_ = 'lower'
+    lpad = 'lpad'
+    regexp_extract = 'regexp_extract'
+    regexp_replace = 'regexp_replace'
+    rpad = 'rpad'
+    split_ = 'split'
+    substring = 'substring'
+    substring_index = 'substring_index'
     trim = 'trim'
     upper_ = 'upper'
+
+    # datetime functions
+    current_date = 'current_date'
+    current_timestamp = 'current_timestamp'
+    date_format = 'date_format'
+    datediff = 'datediff'
+    from_unixtime = 'from_unixtime'
+    month = 'month'
+    to_date = 'to_date'
+    unix_millis = 'unix_millis'
+    year = 'year'
 
     # mathematical functions
     abs_ = 'abs'
     greatest = 'greatest'
+    hex = 'hex'
     least = 'least'
     negative = 'negative'
+    round = 'round'
+
+    # hash functions
+    md5 = 'md5'
+    xxhash64 = 'xxhash64'
 
     # aggregate functions
     avg = 'avg'
     collect_list = 'collect_list'
     collect_set = 'collect_set'
     count_ = 'count'
+    count_distinct = 'count_distinct'
     first = 'first'
     max_ = 'max'
     min_ = 'min'
     sum_ = 'sum'
 
     # array functions
+    array = 'array'
+    array_distinct = 'array_distinct'
+    flatten = 'flatten'
     size = 'size'
+    sort_array = 'sort_array'
+
+    # struct functions
+    named_struct = 'named_struct'
+
+    # window functions
+    lag = 'lag'
+    lead = 'lead'
+    rank = 'rank'
+    row_number = 'row_number'
 
     # generator functions
     explode = 'explode'
@@ -61,7 +101,21 @@ class FunctionName(StrEnum):
 # Enforce python value when running on pyspark 3.X.X
 FORCE_VALUE_SPARK_3XX = {
     FunctionName.concat_ws: {0,},
+    FunctionName.date_format: {1,},
     FunctionName.first: {1,},
+    FunctionName.format_string: {0,},
+    FunctionName.from_unixtime: {1,},
+    FunctionName.lag: {1, 2},
+    FunctionName.lead: {1, 2},
+    FunctionName.lpad: {1, 2},
+    FunctionName.regexp_extract: {1, 2},
+    FunctionName.regexp_replace: {1,},
+    FunctionName.round: {1,},
+    FunctionName.rpad: {1, 2},
+    FunctionName.sort_array: {1,},
+    FunctionName.split_: {1, 2},
+    FunctionName.substring: {1, 2},
+    FunctionName.substring_index: {1, 2},
 }
 
 
@@ -238,6 +292,13 @@ class UserDefinedFunction(Expression):
         return list(self.args)
 
 
+def make_function_not_found(name: str) -> Callable:
+    """Fallback function if installed pyspark version doesn't have a function that is implemented here."""
+    def function_not_found(*args, **kwargs):
+        raise NotImplementedError(f'Function {name} can not be found in pyspark.sql.functions.')
+    return function_not_found
+
+
 RESOLVED_FUNCTION = {
     # operators
     FunctionName.eq: op.eq,
@@ -248,42 +309,11 @@ RESOLVED_FUNCTION = {
     FunctionName.sub: op.sub,
     FunctionName.mul: op.mul,
     FunctionName.truediv: op.truediv,
-
-    # conditional functions
-    FunctionName.coalesce: F.coalesce,
-
-    # predicate functions
-    FunctionName.isnull: F.isnull,
-    FunctionName.isnotnull: F.isnotnull,
-
-    # string functions
-    FunctionName.concat: F.concat,
-    FunctionName.concat_ws: F.concat_ws,
-    FunctionName.length: F.length,
-    FunctionName.lower_: F.lower,
-    FunctionName.trim: F.trim,
-    FunctionName.upper_: F.upper,
-
-    # mathematical functions
-    FunctionName.abs_: F.abs,
-    FunctionName.greatest: F.greatest,
-    FunctionName.least: F.least,
-    FunctionName.negative: F.negative,
-
-    # aggregate functions
-    FunctionName.avg: F.avg,
-    FunctionName.collect_list: F.collect_list,
-    FunctionName.collect_set: F.collect_set,
-    FunctionName.first: F.first,
-    FunctionName.count_: F.count,
-    FunctionName.max_: F.max,
-    FunctionName.min_: F.min,
-    FunctionName.sum_: F.sum,
-
-    # array functions
-    FunctionName.size: F.size,
-
-    # generator functions
-    FunctionName.explode: F.explode,
-    FunctionName.explode_outer: F.explode_outer,
 }
+for name in FunctionName:
+    if name in RESOLVED_FUNCTION:
+        continue
+    func = getattr(F, name, None)
+    if func is None:
+        func = make_function_not_found(name)
+    RESOLVED_FUNCTION[name] = func

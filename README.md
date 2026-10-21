@@ -37,5 +37,5 @@ from pyspark_inspect import inspect_column
 from pyspark_inspect.column import expression as E
 
 ast = inpect_column(F.col('a') + F.col('b'))
-col = ast.to_column()
+col = ast.to_col()
 ```

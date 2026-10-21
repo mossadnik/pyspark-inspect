@@ -1,5 +1,6 @@
 """Parse Catalyst JSON plan into Python data structures."""
 
+import datetime
 import json
 import typing as tp
 from dataclasses import dataclass
@@ -9,9 +10,6 @@ from pyspark.sql import Column
 
 from pyspark_inspect.column import expression as E
 from pyspark_inspect.column.expression import FunctionName as F
-
-LOGICAL_PLAN = 'org.apache.spark.sql.catalyst.plans.logical'
-EXPRESSIONS = 'org.apache.spark.sql.catalyst.expressions'
 
 
 @dataclass
@@ -83,6 +81,12 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         data_type = expr.data['dataType']
         if data_type == 'integer':
             value = int(value)
+        elif data_type == 'boolean':
+            value = value == 'true'
+        elif data_type == 'date':
+            value = datetime.date.fromisoformat(value)
+        elif data_type == 'timestamp':
+            value = datetime.datetime.fromisoformat(value)
         return E.Literal(value)
 
     if expr.class_name in RESOLVED_FUNCTION:
@@ -91,6 +95,8 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
             ignore_nulls = expr.data.get('ignoreNulls')
             if ignore_nulls is not None and len(children) == 1:
                 args = (children[0], E.Literal(ignore_nulls))
+        elif name == F.regexp_replace:
+            args = tuple(children[:3])
         else:
             args = tuple(children)
 
@@ -113,6 +119,8 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedFunction':
         name = UNRESOLVED_FUNCTION.get(expr.data['nameParts'])
+        if name == F.count_ and expr.data.get('isDistinct'):
+            name = F.count_distinct
         if name is not None:
             return E.Function(name=name, args=tuple(children))
 
@@ -162,18 +170,50 @@ RESOLVED_FUNCTION = {
     # string functions
     'org.apache.spark.sql.catalyst.expressions.Concat': F.concat,
     'org.apache.spark.sql.catalyst.expressions.ConcatWs': F.concat_ws,
+    'org.apache.spark.sql.catalyst.expressions.FormatString': F.format_string,
     'org.apache.spark.sql.catalyst.expressions.Length': F.length,
     'org.apache.spark.sql.catalyst.expressions.Lower': F.lower_,
+    'org.apache.spark.sql.catalyst.expressions.StringLPad': F.lpad,
+    'org.apache.spark.sql.catalyst.expressions.RegExpExtract': F.regexp_extract,
+    'org.apache.spark.sql.catalyst.expressions.RegExpReplace': F.regexp_replace,
+    'org.apache.spark.sql.catalyst.expressions.StringRPad': F.rpad,
+    'org.apache.spark.sql.catalyst.expressions.StringSplit': F.split_,
+    'org.apache.spark.sql.catalyst.expressions.Substring': F.substring,
+    'org.apache.spark.sql.catalyst.expressions.SubstringIndex': F.substring_index,
     'org.apache.spark.sql.catalyst.expressions.StringTrim': F.trim,
     'org.apache.spark.sql.catalyst.expressions.Upper': F.upper_,
 
+    # datetime functions
+    'org.apache.spark.sql.catalyst.expressions.CurrentDate': F.current_date,
+    'org.apache.spark.sql.catalyst.expressions.CurrentTimestamp': F.current_timestamp,
+    'org.apache.spark.sql.catalyst.expressions.DateDiff': F.datediff,
+    'org.apache.spark.sql.catalyst.expressions.DateFormatClass': F.date_format,
+    'org.apache.spark.sql.catalyst.expressions.FromUnixTime': F.from_unixtime,
+    'org.apache.spark.sql.catalyst.expressions.Month': F.month,
+    'org.apache.spark.sql.catalyst.expressions.ParseToDate': F.to_date,
+    'org.apache.spark.sql.catalyst.expressions.UnixMillis': F.unix_millis,
+    'org.apache.spark.sql.catalyst.expressions.Year': F.year,
+
     # mathematical functions
     'org.apache.spark.sql.catalyst.expressions.Abs': F.abs_,
+    'org.apache.spark.sql.catalyst.expressions.Hex': F.hex,
     'org.apache.spark.sql.catalyst.expressions.Least': F.least,
     'org.apache.spark.sql.catalyst.expressions.Greatest': F.greatest,
+    'org.apache.spark.sql.catalyst.expressions.Round': F.round,
+
+    # hash functions
+    'org.apache.spark.sql.catalyst.expressions.Md5': F.md5,
+    'org.apache.spark.sql.catalyst.expressions.XxHash64': F.xxhash64,
 
     # array functions
+    'org.apache.spark.sql.catalyst.expressions.CreateArray': F.array,
+    'org.apache.spark.sql.catalyst.expressions.ArrayDistinct': F.array_distinct,
+    'org.apache.spark.sql.catalyst.expressions.Flatten': F.flatten,
     'org.apache.spark.sql.catalyst.expressions.Size': F.size,
+    'org.apache.spark.sql.catalyst.expressions.SortArray': F.sort_array,
+
+    # struct functions
+    'org.apache.spark.sql.catalyst.expressions.CreateNamedStruct': F.named_struct,
 
     # aggregate functions
     'org.apache.spark.sql.catalyst.expressions.aggregate.Average': F.avg,
@@ -183,7 +223,13 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.aggregate.First': F.first,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Max': F.max_,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Min': F.min_,
+    'org.apache.spark.sql.catalyst.expressions.Rank': F.rank,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': F.sum_,
+
+    # window functions
+    'org.apache.spark.sql.catalyst.expressions.Lag': F.lag,
+    'org.apache.spark.sql.catalyst.expressions.Lead': F.lead,
+    'org.apache.spark.sql.catalyst.expressions.RowNumber': F.row_number,
 
     # generator functions
     'org.apache.spark.sql.catalyst.expressions.Explode': F.explode,
