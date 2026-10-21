@@ -78,6 +78,12 @@ class Test_synonyms:
             ~(F.col('a') == F.col('b')),
         )
 
+    def test_struct(self, spark_session):
+        self.assert_same(
+            F.struct(F.col('a').alias('b'), F.col('x').alias('y')),
+            F.named_struct(F.lit('b'), F.col('a').alias('b'), F.lit('y'), F.col('x').alias('y'))
+        )
+
 
 @pytest.fixture
 def conditional_functions(spark_session):
