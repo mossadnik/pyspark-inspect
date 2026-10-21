@@ -53,6 +53,10 @@ class FunctionName(StrEnum):
     # array functions
     size = 'size'
 
+    # generator functions
+    explode = 'explode'
+    explode_outer = 'explode_outer'
+
 
 # Enforce python value when running on pyspark 3.X.X
 FORCE_VALUE_SPARK_3XX = {
@@ -278,4 +282,8 @@ RESOLVED_FUNCTION = {
 
     # array functions
     FunctionName.size: F.size,
+
+    # generator functions
+    FunctionName.explode: F.explode,
+    FunctionName.explode_outer: F.explode_outer,
 }

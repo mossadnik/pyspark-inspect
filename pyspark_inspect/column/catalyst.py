@@ -121,6 +121,11 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         key = children[expr.data['extraction']]
         return E.GetItem(child=child, key=key)
 
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.GeneratorOuter':
+        child = children[0]
+        if isinstance(child, E.Function) and child.name == F.explode:
+            return E.Function(name=F.explode_outer, args=child.args)
+
     return E.UnknownExpression(expr.class_name, tuple(children))
 
 
@@ -179,6 +184,9 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.aggregate.Max': F.max_,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Min': F.min_,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': F.sum_,
+
+    # generator functions
+    'org.apache.spark.sql.catalyst.expressions.Explode': F.explode,
 }
 
 
