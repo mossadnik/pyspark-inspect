@@ -1,5 +1,9 @@
+import datetime
+from typing import cast
+
 import pyspark.sql.connect.expressions as cex
 from pyspark.sql import Column
+from pyspark.sql import types as T
 
 import pyspark_inspect.column.expression as E
 from pyspark_inspect.column.expression import FunctionName as F
@@ -9,7 +13,13 @@ def parse_connect_expression(expr: cex.Expression) -> E.Expression:
     if isinstance(expr, cex.ColumnReference):
         return E.ColumnReference(name=expr.name())
     if isinstance(expr, cex.LiteralExpression):
-        return E.Literal(value=expr._value)
+        data_type = expr._dataType
+        value = expr._value
+        if data_type == T.DateType():
+            value = datetime.date(1970, 1, 1) + datetime.timedelta(days=cast(int, value))
+        elif data_type == T.TimestampType():
+            value = datetime.datetime.fromtimestamp(cast(int, value) / 1e6)
+        return E.Literal(value=value)
     if isinstance(expr, cex.ColumnAlias):
         # TODO what does it mean to have multiple aliases?
         return E.ColumnAlias(
@@ -24,6 +34,8 @@ def parse_connect_expression(expr: cex.Expression) -> E.Expression:
     if isinstance(expr, cex.UnresolvedFunction):
         name = FUNCTION_SYNONYM.get(expr._name, expr._name)
         args = [parse_connect_expression(arg) for arg in expr._args]
+        if name == F.count_ and expr._is_distinct:
+            name = F.count_distinct
         if name in E.FunctionName:
             return E.Function(
                 name=E.FunctionName(name),
