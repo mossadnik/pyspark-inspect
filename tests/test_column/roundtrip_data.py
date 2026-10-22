@@ -27,6 +27,9 @@ function_test_cases = [
     # string functions
     (F.concat, (a, b)),
     (F.concat_ws, (text, a, b)),
+    (F.decode_, (a, text)),
+    (F.encode_, (a, text)),
+    (F.endswith_, (a, text)),
     (F.format_string, (text, a, b)),
     (F.length, (a,)),
     (F.lpad, (a, number, text)),
@@ -36,6 +39,7 @@ function_test_cases = [
     (F.replace_, (a, text, text)),
     (F.rpad, (a, number, text)),
     (F.split_, (a, text, number)),
+    (F.startswith_, (a, text)),
     (F.substring, (a, number, number)),
     (F.substring_index, (a, text, number)),
     (F.trim, (a,)),
@@ -83,7 +87,11 @@ function_test_cases = [
 
     # array functions
     (F.array, (a, b)),
+    (F.array_compact, (a,)),
+    (F.array_contains, (a, b)),
     (F.array_distinct, (a,)),
+    (F.array_intersect, (a, b)),
+    (F.array_union, (a, b)),
     (F.flatten, (a,)),
     (F.size, (a,)),
     (F.sort_array, (a, boolean)),

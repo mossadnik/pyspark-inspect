@@ -30,6 +30,9 @@ class FunctionName(StrEnum):
     # string functions
     concat = 'concat'
     concat_ws = 'concat_ws'
+    encode_ = 'encode'
+    endswith_ = 'endswith'
+    decode_ = 'decode'
     format_string = 'format_string'
     length = 'length'
     lower_ = 'lower'
@@ -39,6 +42,7 @@ class FunctionName(StrEnum):
     replace_ = 'replace'
     rpad = 'rpad'
     split_ = 'split'
+    startswith_ = 'startswith'
     substring = 'substring'
     substring_index = 'substring_index'
     trim = 'trim'
@@ -86,7 +90,11 @@ class FunctionName(StrEnum):
 
     # array functions
     array = 'array'
+    array_compact = 'array_compact'
+    array_contains = 'array_contains'
     array_distinct = 'array_distinct'
+    array_intersect = 'array_intersect'
+    array_union = 'array_union'
     flatten = 'flatten'
     size = 'size'
     sort_array = 'sort_array'
@@ -109,6 +117,8 @@ class FunctionName(StrEnum):
 FORCE_VALUE_SPARK_3XX = {
     FunctionName.concat_ws: {0,},
     FunctionName.date_format: {1,},
+    FunctionName.decode_: {1,},
+    FunctionName.encode_: {1,},
     FunctionName.first: {1,},
     FunctionName.format_string: {0,},
     FunctionName.from_unixtime: {1,},

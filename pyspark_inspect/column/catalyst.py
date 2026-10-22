@@ -175,6 +175,8 @@ RESOLVED_FUNCTION = {
     # string functions
     'org.apache.spark.sql.catalyst.expressions.Concat': F.concat,
     'org.apache.spark.sql.catalyst.expressions.ConcatWs': F.concat_ws,
+    'org.apache.spark.sql.catalyst.expressions.StringDecode': F.decode_,
+    'org.apache.spark.sql.catalyst.expressions.Encode': F.encode_,
     'org.apache.spark.sql.catalyst.expressions.FormatString': F.format_string,
     'org.apache.spark.sql.catalyst.expressions.Length': F.length,
     'org.apache.spark.sql.catalyst.expressions.Lower': F.lower_,
@@ -218,7 +220,11 @@ RESOLVED_FUNCTION = {
 
     # array functions
     'org.apache.spark.sql.catalyst.expressions.CreateArray': F.array,
+    'org.apache.spark.sql.catalyst.expressions.ArrayCompact': F.array_compact,
+    'org.apache.spark.sql.catalyst.expressions.ArrayContains': F.array_contains,
     'org.apache.spark.sql.catalyst.expressions.ArrayDistinct': F.array_distinct,
+    'org.apache.spark.sql.catalyst.expressions.ArrayIntersect': F.array_intersect,
+    'org.apache.spark.sql.catalyst.expressions.ArrayUnion': F.array_union,
     'org.apache.spark.sql.catalyst.expressions.Flatten': F.flatten,
     'org.apache.spark.sql.catalyst.expressions.Size': F.size,
     'org.apache.spark.sql.catalyst.expressions.SortArray': F.sort_array,
