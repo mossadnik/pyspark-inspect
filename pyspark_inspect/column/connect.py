@@ -41,6 +41,8 @@ def parse_connect_expression(expr: cex.Expression) -> E.Expression:
                 name=E.FunctionName(name),
                 args=tuple(args)
             )
+        else:
+            return E.UnknownExpression(expr._name, _children=tuple([parse_connect_expression(a) for a in expr._args]))
     if isinstance(expr, cex.CaseWhen):
         branches = [
             (parse_connect_expression(a), parse_connect_expression(b))

@@ -118,11 +118,13 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         return E.CaseWhen(branches=tuple(branches), otherwise=otherwise)
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedFunction':
-        name = UNRESOLVED_FUNCTION.get(expr.data['nameParts'])
-        if name == F.count_ and expr.data.get('isDistinct'):
-            name = F.count_distinct
-        if name is not None:
-            return E.Function(name=name, args=tuple(children))
+        name_parts = parse_array_string(expr.data['nameParts'])
+        unresolved_name = name_parts[0]
+        resolved_name = UNRESOLVED_FUNCTION.get(unresolved_name)
+        if resolved_name == F.count_ and expr.data.get('isDistinct'):
+            resolved_name = F.count_distinct
+        if resolved_name is not None:
+            return E.Function(name=resolved_name, args=tuple(children))
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedExtractValue':
         child = children[expr.data['child']]
@@ -238,50 +240,22 @@ RESOLVED_FUNCTION = {
 
 # Catalyst org.apache.spark.sql.catalyst.analysis.UnresolvedFunction
 # Seen on Databricks 3.5.2
-UNRESOLVED_FUNCTION = {
-    # predicate functions
-    '[isnotnull]': F.isnotnull,
-    '[isNotNull]': F.isnotnull,
-    '[isNull]': F.isnull,
-    '[isnull]': F.isnull,
-
+UNRESOLVED_FUNCTION_SYNONYMS = {
+    'isNotNull': F.isnotnull,
+    'isNull': F.isnull,
+}
+UNRESOLVED_FUNCTION_MANUAL = {
     # operators
-    '[+]': F.add,
-    '[and]': F.and_,
-    '[=]': F.eq,
-    '[*]': F.mul,
-    '[!]': F.not_,
-    '[or]': F.or_,
-    '[-]': F.sub,
-    '[/]': F.truediv,
-
-    # conditional functions
-    '[coalesce]': F.coalesce,
-
-    # string functions
-    '[concat]': F.concat,
-    '[concat_ws]': F.concat_ws,
-    '[length]': F.length,
-    '[lower]': F.lower_,
-    '[trim]': F.trim,
-    '[upper]': F.upper_,
-
-    # mathematical functions
-    '[abs]': F.abs_,
-    '[greatest]': F.greatest,
-    '[least]': F.least,
-    '[negative]': F.negative,
-
-    # aggregate functions
-    '[avg]': F.avg,
-    '[count]': F.count_,
-    '[collect_list]': F.collect_list,
-    '[collect_set]': F.collect_set,
-    '[first]': F.first,
-    '[max]': F.max_,
-    '[min]': F.min_,
-    '[sum]': F.sum_,
-
-    # array functions
-    '[size]': F.size,
+    '+': F.add,
+    '=': F.eq,
+    '*': F.mul,
+    '!': F.not_,
+    '-': F.sub,
+    '/': F.truediv,
+}
+_exclude = set(UNRESOLVED_FUNCTION_MANUAL.values())
+UNRESOLVED_FUNCTION = {
+    **UNRESOLVED_FUNCTION_SYNONYMS,
+    **{fn.value: fn for fn in F if fn not in _exclude},
+    **UNRESOLVED_FUNCTION_MANUAL
 }
