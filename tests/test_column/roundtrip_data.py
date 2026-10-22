@@ -33,6 +33,7 @@ function_test_cases = [
     (F.lower_, (a,)),
     (F.regexp_extract, (a, text, number)),
     (F.regexp_replace, (a, text, text)),
+    (F.replace_, (a, text, text)),
     (F.rpad, (a, number, text)),
     (F.split_, (a, text, number)),
     (F.substring, (a, number, number)),
@@ -44,9 +45,11 @@ function_test_cases = [
     (F.current_date, ()),
     (F.current_timestamp, ()),
     (F.from_unixtime, (a, E.Literal('yyyy-MM-dd HH:mm:ss'))),
+    (F.date_add, (a, number)),
     (F.date_format, (a, text)),
     (F.datediff, (a, b)),
     (F.month, (a,)),
+    (F.timestamp_millis, (a,)),
     (F.to_date, (a,)),
     (F.unix_millis, (a,)),
     (F.year, (a,)),
@@ -71,8 +74,12 @@ function_test_cases = [
     (F.collect_set, (a,)),
     (F.first, (a, boolean)),
     (F.max_, (a,)),
+    (F.max_by, (a, b)),
     (F.min_, (a,)),
     (F.sum_, (a,)),
+
+    # collection functions
+    (F.element_at, (a, number)),
 
     # array functions
     (F.array, (a, b)),

@@ -121,10 +121,13 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         name_parts = parse_array_string(expr.data['nameParts'])
         unresolved_name = name_parts[0]
         resolved_name = UNRESOLVED_FUNCTION.get(unresolved_name)
+        args = tuple(children)
         if resolved_name == F.count_ and expr.data.get('isDistinct'):
             resolved_name = F.count_distinct
+        elif resolved_name == F.first:
+            args = (args[0], E.Literal(expr.data['ignoreNulls']))
         if resolved_name is not None:
-            return E.Function(name=resolved_name, args=tuple(children))
+            return E.Function(name=resolved_name, args=args)
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedExtractValue':
         child = children[expr.data['child']]
@@ -178,6 +181,7 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.StringLPad': F.lpad,
     'org.apache.spark.sql.catalyst.expressions.RegExpExtract': F.regexp_extract,
     'org.apache.spark.sql.catalyst.expressions.RegExpReplace': F.regexp_replace,
+    'org.apache.spark.sql.catalyst.expressions.StringReplace': F.replace_,
     'org.apache.spark.sql.catalyst.expressions.StringRPad': F.rpad,
     'org.apache.spark.sql.catalyst.expressions.StringSplit': F.split_,
     'org.apache.spark.sql.catalyst.expressions.Substring': F.substring,
@@ -188,10 +192,12 @@ RESOLVED_FUNCTION = {
     # datetime functions
     'org.apache.spark.sql.catalyst.expressions.CurrentDate': F.current_date,
     'org.apache.spark.sql.catalyst.expressions.CurrentTimestamp': F.current_timestamp,
+    'org.apache.spark.sql.catalyst.expressions.DateAdd': F.date_add,
     'org.apache.spark.sql.catalyst.expressions.DateDiff': F.datediff,
     'org.apache.spark.sql.catalyst.expressions.DateFormatClass': F.date_format,
     'org.apache.spark.sql.catalyst.expressions.FromUnixTime': F.from_unixtime,
     'org.apache.spark.sql.catalyst.expressions.Month': F.month,
+    'org.apache.spark.sql.catalyst.expressions.MillisToTimestamp': F.timestamp_millis,
     'org.apache.spark.sql.catalyst.expressions.ParseToDate': F.to_date,
     'org.apache.spark.sql.catalyst.expressions.UnixMillis': F.unix_millis,
     'org.apache.spark.sql.catalyst.expressions.Year': F.year,
@@ -206,6 +212,9 @@ RESOLVED_FUNCTION = {
     # hash functions
     'org.apache.spark.sql.catalyst.expressions.Md5': F.md5,
     'org.apache.spark.sql.catalyst.expressions.XxHash64': F.xxhash64,
+
+    # collection functions
+    'org.apache.spark.sql.catalyst.expressions.ElementAt': F.element_at,
 
     # array functions
     'org.apache.spark.sql.catalyst.expressions.CreateArray': F.array,
@@ -224,6 +233,7 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.aggregate.CollectSet': F.collect_set,
     'org.apache.spark.sql.catalyst.expressions.aggregate.First': F.first,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Max': F.max_,
+    'org.apache.spark.sql.catalyst.expressions.aggregate.MaxBy': F.max_by,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Min': F.min_,
     'org.apache.spark.sql.catalyst.expressions.Rank': F.rank,
     'org.apache.spark.sql.catalyst.expressions.aggregate.Sum': F.sum_,

@@ -36,6 +36,7 @@ class FunctionName(StrEnum):
     lpad = 'lpad'
     regexp_extract = 'regexp_extract'
     regexp_replace = 'regexp_replace'
+    replace_ = 'replace'
     rpad = 'rpad'
     split_ = 'split'
     substring = 'substring'
@@ -46,10 +47,12 @@ class FunctionName(StrEnum):
     # datetime functions
     current_date = 'current_date'
     current_timestamp = 'current_timestamp'
+    date_add = 'date_add'
     date_format = 'date_format'
     datediff = 'datediff'
     from_unixtime = 'from_unixtime'
     month = 'month'
+    timestamp_millis = 'timestamp_millis'
     to_date = 'to_date'
     unix_millis = 'unix_millis'
     year = 'year'
@@ -74,8 +77,12 @@ class FunctionName(StrEnum):
     count_distinct = 'count_distinct'
     first = 'first'
     max_ = 'max'
+    max_by = 'max_by'
     min_ = 'min'
     sum_ = 'sum'
+
+    # collection functions
+    element_at = 'element_at'
 
     # array functions
     array = 'array'
