@@ -45,6 +45,7 @@ class FunctionName(StrEnum):
     startswith_ = 'startswith'
     substring = 'substring'
     substring_index = 'substring_index'
+    rlike = 'rlike'
     trim = 'trim'
     upper_ = 'upper'
 
@@ -206,9 +207,9 @@ class GetItem(Expression):
 
 @dataclass
 class SortOrder(Expression):
+    child: Expression
     asc: bool
     nulls_first: bool
-    child: Expression
 
     @property
     def children(self):
@@ -279,21 +280,45 @@ class CaseWhen(Expression):
 
 
 @dataclass
-class WindowExpression(Expression):
-    # TODO add frame
-    window_function: Expression
-    partition_by: tuple[Expression, ...]
-    order_by: tuple[Expression, ...]
+class ExpressionList(Expression):
+    args: tuple[Expression, ...]
 
     @property
     def children(self):
-        return [self.window_function, *self.partition_by, *self.order_by]
+        return list(self.args)
+
+    def to_col(self) -> list[Column]:
+        return [a.to_col() for a in self.args]
+
+
+@dataclass
+class WindowSpec(Expression):
+    partition_by: ExpressionList
+    order_by: ExpressionList
+
+    @property
+    def children(self):
+        return [self.partition_by, self.order_by]
+
+    def to_col(self):
+        raise NotImplementedError('WindowSpec cannot be converted to Column.')
+
+
+@dataclass
+class WindowExpression(Expression):
+    # TODO add frame
+    window_function: Expression
+    window_spec: WindowSpec
+
+    @property
+    def children(self):
+        return [self.window_function, self.window_spec]
 
     def to_col(self):
         window = (
             Window()
-            .partitionBy([c.to_col() for c in self.partition_by])
-            .orderBy([c.to_col() for c in self.order_by])
+            .partitionBy(self.window_spec.partition_by.to_col())
+            .orderBy(self.window_spec.order_by.to_col())
         )
         func = self.window_function.to_col()
         return func.over(window)
@@ -301,6 +326,10 @@ class WindowExpression(Expression):
 
 @dataclass
 class UserDefinedFunction(Expression):
+    """Python UDFs.
+
+    This can not be used to actually run the function as of now.
+    """
     function_name: str
     args: tuple[Expression, ...]
 

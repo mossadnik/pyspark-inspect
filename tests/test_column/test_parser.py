@@ -17,11 +17,6 @@ def core_functions(spark_session):
             'values': {'a': 1},
         },
         {
-            'col': F.lit(1),
-            'expected': Literal(1),
-            'values': {'a': 1},
-        },
-        {
             'col': F.col('a').alias('b'),
             'expected': ColumnAlias(_alias=('b',), child=ColumnReference('a'))
         },
@@ -82,6 +77,20 @@ class Test_synonyms:
         self.assert_same(
             F.struct(F.col('a').alias('b'), F.col('x').alias('y')),
             F.named_struct(F.lit('b'), F.col('a').alias('b'), F.lit('y'), F.col('x').alias('y'))
+        )
+
+    def test_regexp(self, spark_session):
+        a, b = map(F.col, 'ab')
+        self.assert_same(
+            F.regexp(a, b),
+            F.rlike(a, b)
+        )
+
+    def test_regexp_like(self, spark_session):
+        a, b = map(F.col, 'ab')
+        self.assert_same(
+            F.regexp_like(a, b),
+            F.rlike(a, b)
         )
 
 

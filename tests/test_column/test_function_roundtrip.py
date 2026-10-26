@@ -25,3 +25,16 @@ def test_GetItem_roundtrip(spark_session):
     col = expr.to_col()
     actual = inspect_column(col)
     assert actual == expr
+
+
+def test_WindowExpression_roundtrip(spark_session):
+    expr = E.WindowExpression(
+        window_function=E.Function(E.FunctionName.max_, (a,)),
+        window_spec=E.WindowSpec(
+            partition_by=E.ExpressionList((b,)),
+            order_by=E.ExpressionList((E.SortOrder(child=c, asc=True, nulls_first=True),))
+        )
+    )
+    col = expr.to_col()
+    actual = inspect_column(col)
+    assert actual == expr

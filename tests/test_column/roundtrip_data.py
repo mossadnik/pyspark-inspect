@@ -37,6 +37,7 @@ function_test_cases = [
     (F.regexp_extract, (a, text, number)),
     (F.regexp_replace, (a, text, text)),
     (F.replace_, (a, text, text)),
+    (F.rlike, (a, b)),
     (F.rpad, (a, number, text)),
     (F.split_, (a, text, number)),
     (F.startswith_, (a, text)),

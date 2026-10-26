@@ -139,6 +139,26 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         if isinstance(child, E.Function) and child.name == F.explode:
             return E.Function(name=F.explode_outer, args=child.args)
 
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.SortOrder':
+        direction = expr.data['direction']['object']
+        null_ordering = expr.data['nullOrdering']['object']
+        asc = direction == 'org.apache.spark.sql.catalyst.expressions.Ascending$'
+        nulls_first = null_ordering == 'org.apache.spark.sql.catalyst.expressions.NullsFirst$'
+        return E.SortOrder(child=children[0], asc=asc, nulls_first=nulls_first)
+
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.WindowExpression':
+        func = children[expr.data['windowFunction']]
+        spec = children[expr.data['windowSpec']]
+        return E.WindowExpression(func, spec)
+
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.WindowSpecDefinition':
+        partition_by = [children[i] for i in expr.data['partitionSpec']]
+        order_by = [children[i] for i in expr.data['orderSpec']]
+        return E.WindowSpec(
+            E.ExpressionList(tuple(partition_by)),
+            E.ExpressionList(tuple(order_by))
+        )
+
     return E.UnknownExpression(expr.class_name, tuple(children))
 
 
@@ -183,6 +203,7 @@ RESOLVED_FUNCTION = {
     'org.apache.spark.sql.catalyst.expressions.StringLPad': F.lpad,
     'org.apache.spark.sql.catalyst.expressions.RegExpExtract': F.regexp_extract,
     'org.apache.spark.sql.catalyst.expressions.RegExpReplace': F.regexp_replace,
+    'org.apache.spark.sql.catalyst.expressions.RLike': F.rlike,
     'org.apache.spark.sql.catalyst.expressions.StringReplace': F.replace_,
     'org.apache.spark.sql.catalyst.expressions.StringRPad': F.rpad,
     'org.apache.spark.sql.catalyst.expressions.StringSplit': F.split_,
@@ -259,6 +280,8 @@ RESOLVED_FUNCTION = {
 UNRESOLVED_FUNCTION_SYNONYMS = {
     'isNotNull': F.isnotnull,
     'isNull': F.isnull,
+    'regexp': F.rlike,
+    'regexp_like': F.rlike,
 }
 UNRESOLVED_FUNCTION_MANUAL = {
     # operators
