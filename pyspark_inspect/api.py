@@ -1,12 +1,16 @@
 """High-level public functions and classes."""
+from typing import cast
+
 from py4j.protocol import Py4JError
 from pyspark.sql import Column
 
 from .column.catalyst import parse_catalyst_column
-from .column.expression import Expression
+from .column.expression import ColumnReference, Expression
+from .term import Term, rewrite
 
 try:
     from pyspark.sql.connect.column import Column as ConnectColumn
+
     from .column.connect import parse_connect_column
 except (ImportError, ModuleNotFoundError):
     ConnectColumn = None
@@ -27,3 +31,13 @@ def inspect_column(col: Column) -> Expression:
             raise NotImplementedError('Only pyspark < 4.0.0 is supported for spark classic')
         else:
             raise
+
+
+def replace_column_references(expr: Expression, subs: dict[str, Expression]) -> Expression:
+    """Replace named column references with expressions."""
+
+    def rule(expr: Term) -> Expression | None:
+        if isinstance(expr, ColumnReference):
+            return subs.get(expr.name)
+
+    return cast(Expression, rewrite(expr, rule))

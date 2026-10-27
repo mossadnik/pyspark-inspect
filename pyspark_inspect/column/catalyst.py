@@ -103,19 +103,18 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         return E.Function(name, args=args)
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression':
-        return parse_catalyst_expression(expr.children[0])
+        return children[0]
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.CaseWhen':
-        branches = [
-            (
-                parse_catalyst_expression(load_catalyst_plan(b['_1'])),
-                parse_catalyst_expression(load_catalyst_plan(b['_2'])),)
+        args = [
+            parse_catalyst_expression(load_catalyst_plan(b[k]))
             for b in expr.data['branches']
+            for k in ['_1', '_2']
         ]
         otherwise = expr.data.get('elseValue')
         if otherwise is not None:
-            otherwise = parse_catalyst_expression(load_catalyst_plan(otherwise))
-        return E.CaseWhen(branches=tuple(branches), otherwise=otherwise)
+            args.append(parse_catalyst_expression(load_catalyst_plan(otherwise)))
+        return E.CaseWhen(tuple(args))
 
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedFunction':
         name_parts = parse_array_string(expr.data['nameParts'])
@@ -155,8 +154,8 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
         partition_by = [children[i] for i in expr.data['partitionSpec']]
         order_by = [children[i] for i in expr.data['orderSpec']]
         return E.WindowSpec(
-            E.ExpressionList(tuple(partition_by)),
-            E.ExpressionList(tuple(order_by))
+            partition_by=tuple(partition_by),
+            order_by=tuple(order_by),
         )
 
     return E.UnknownExpression(expr.class_name, tuple(children))

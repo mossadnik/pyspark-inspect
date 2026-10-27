@@ -8,6 +8,8 @@ import pyspark
 from pyspark.sql import Column, Window
 from pyspark.sql import functions as F
 
+from pyspark_inspect import term
+
 
 class FunctionName(StrEnum):
     # operators
@@ -137,83 +139,63 @@ FORCE_VALUE_SPARK_3XX = {
 }
 
 
-@dataclass
-class Expression:
-    @property
-    def children(self) -> 'list[Expression]':
-        return []
-
+@dataclass(frozen=True)
+class Expression(term.Term):
     def to_col(self) -> Column:
         raise NotImplementedError()
 
 
-@dataclass
+@dataclass(frozen=True)
 class UnknownExpression(Expression):
-    source: str
-    _children: tuple[Expression, ...]
-
-    @property
-    def children(self):
-        return list(self._children)
+    source: str = term.param()
+    _children: tuple[Expression, ...] = term.child()
 
 
-@dataclass
+@dataclass(frozen=True)
 class ColumnReference(Expression):
-    name: str
+    name: str = term.param()
 
     def to_col(self):
         return F.col(self.name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Literal(Expression):
-    value: Any
+    value: Any = term.param()
 
     def to_col(self):
         return F.lit(self.value)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ColumnAlias(Expression):
-    _alias: tuple[str, ...]
-    child: Expression
+    _alias: tuple[str, ...] = term.param()
+    child: Expression = term.child()
 
     @property
     def name(self) -> str:
         # TODO what is the meaning of multiple aliases?
         return self._alias[0]
 
-    @property
-    def children(self):
-        return [self.child]
-
     def to_col(self):
         return self.child.to_col().alias(self.name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GetItem(Expression):
     """Apply __getitem__ to Column."""
-    child: Expression
-    key: Expression
-
-    @property
-    def children(self):
-        return [self.child, self.key]
+    child: Expression = term.child()
+    key: Expression = term.child()
 
     def to_col(self):
         return self.child.to_col()[self.key.to_col()]
 
 
-@dataclass
+@dataclass(frozen=True)
 class SortOrder(Expression):
-    child: Expression
-    asc: bool
-    nulls_first: bool
-
-    @property
-    def children(self):
-        return [self.child]
+    child: Expression = term.child()
+    asc: bool = term.param()
+    nulls_first: bool = term.param()
 
     def to_col(self):
         col = self.child.to_col()
@@ -229,14 +211,10 @@ class SortOrder(Expression):
                 return col.desc_nulls_last()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Function(Expression):
-    name: FunctionName
-    args: tuple[Expression, ...]
-
-    @property
-    def children(self):
-        return list(self.args)
+    name: FunctionName = term.param()
+    args: tuple[Expression, ...] = term.child()
 
     def to_col(self):
         func = RESOLVED_FUNCTION.get(self.name)
@@ -257,85 +235,57 @@ class Function(Expression):
         return func(*args)
 
 
-@dataclass
+@dataclass(frozen=True)
 class CaseWhen(Expression):
-    branches: tuple[tuple[Expression, Expression], ...]
-    otherwise: Expression | None
-
-    @property
-    def children(self):
-        res = [c for b in self.branches for c in b]
-        if self.otherwise is None:
-            return res
-        return res + [self.otherwise]
+    args: tuple[Expression, ...] = term.child()
 
     def to_col(self):
-        b = self.branches[0]
-        res = F.when(b[0].to_col(), b[1].to_col())
-        for b in self.branches[1:]:
-            res = res.when(b[0].to_col(), b[1].to_col())
-        if self.otherwise is None:
-            return res
-        return res.otherwise(self.otherwise.to_col())
+        args = [a.to_col() for a in self.args]
+        branches = [
+            (when, then)
+            for when, then in zip(args[:2:], args[1:2:])
+        ]
+        res = F.when(*branches[0])
+        for when, then in branches[1:]:
+            res = res.when(when, then)
+        if len(args) % 2 == 1:
+            res = res.otherwise(args[-1])
+        return res
 
 
-@dataclass
-class ExpressionList(Expression):
-    args: tuple[Expression, ...]
-
-    @property
-    def children(self):
-        return list(self.args)
-
-    def to_col(self) -> list[Column]:
-        return [a.to_col() for a in self.args]
-
-
-@dataclass
+@dataclass(frozen=True)
 class WindowSpec(Expression):
-    partition_by: ExpressionList
-    order_by: ExpressionList
-
-    @property
-    def children(self):
-        return [self.partition_by, self.order_by]
+    partition_by: tuple[Expression, ...] = term.child()
+    order_by: tuple[Expression, ...] = term.child()
 
     def to_col(self):
         raise NotImplementedError('WindowSpec cannot be converted to Column.')
 
 
-@dataclass
+@dataclass(frozen=True)
 class WindowExpression(Expression):
     # TODO add frame
-    window_function: Expression
-    window_spec: WindowSpec
-
-    @property
-    def children(self):
-        return [self.window_function, self.window_spec]
+    window_function: Expression = term.child()
+    window_spec: WindowSpec = term.child()
 
     def to_col(self):
         window = (
             Window()
-            .partitionBy(self.window_spec.partition_by.to_col())
-            .orderBy(self.window_spec.order_by.to_col())
+            .partitionBy([c.to_col() for c in self.window_spec.partition_by])
+            .orderBy([c.to_col() for c in self.window_spec.order_by])
         )
         func = self.window_function.to_col()
         return func.over(window)
 
 
-@dataclass
+@dataclass(frozen=True)
 class UserDefinedFunction(Expression):
     """Python UDFs.
 
     This can not be used to actually run the function as of now.
     """
-    function_name: str
-    args: tuple[Expression, ...]
-
-    @property
-    def children(self):
-        return list(self.args)
+    function_name: str = term.param()
+    args: tuple[Expression, ...] = term.child()
 
 
 def make_function_not_found(name: str) -> Callable:

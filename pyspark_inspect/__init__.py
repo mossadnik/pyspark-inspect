@@ -1,7 +1,8 @@
-from .api import inspect_column
+from .api import inspect_column, replace_column_references
 
 __all__ = [
-    'inspect_column'
+    'inspect_column',
+    'replace_column_references'
 ]
 
 

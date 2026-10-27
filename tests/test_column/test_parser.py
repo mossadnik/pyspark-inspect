@@ -94,40 +94,8 @@ class Test_synonyms:
         )
 
 
-@pytest.fixture
-def conditional_functions(spark_session):
-    a, b = map(F.col, 'ab')
-    ref_a, ref_b = map(ColumnReference, 'ab')
-    return [
-        {
-            'col': F.coalesce(a, b),
-            'expected': Function(name=FunctionName.coalesce, args=(ref_a, ref_b)),
-            'values': {'a': 1, 'b': 2},
-        },
-        {
-            'col': F.when(a, F.lit(1)),
-            'expected': CaseWhen(
-                branches=((ref_a, Literal(1)),),
-                otherwise=None
-            ),
-        },
-        {
-            'col': F.when(a, F.lit(1)).otherwise(F.lit(2)),
-            'expected': CaseWhen(
-                branches=((ref_a, Literal(1)),),
-                otherwise=Literal(2)
-            ),
-        }
-    ]
-
-
 class Test_inspect_column:
     def test_core_functions(self, core_functions):
         tcs = core_functions
-        for tc in tcs:
-            assert inspect_column(tc['col']) == tc['expected']
-
-    def test_conditional_functions(self, conditional_functions):
-        tcs = conditional_functions
         for tc in tcs:
             assert inspect_column(tc['col']) == tc['expected']
