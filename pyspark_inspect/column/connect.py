@@ -80,4 +80,6 @@ def parse_connect_column(col: Column) -> E.Expression:
 FUNCTION_SYNONYM = {
     'isNull': F.isnull,
     'isNotNull': F.isnotnull,
+    'regexp': F.rlike,
+    'regexp_like': F.rlike,
 }
