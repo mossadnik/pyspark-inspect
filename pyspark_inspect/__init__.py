@@ -1,9 +1,9 @@
-from .api import inspect_dataframe
-
+from .api import inspect_column, replace_column_references
 
 __all__ = [
-    'inspect_dataframe'
+    'inspect_column',
+    'replace_column_references'
 ]
 
 
-__version__ = '0.3.1'
+__version__ = '0.7.0'

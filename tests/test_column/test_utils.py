@@ -1,4 +1,4 @@
-from pyspark_inspect.parser.catalyst import parse_array_string
+from pyspark_inspect.column.catalyst import parse_array_string
 
 
 class Test_parse_array_string:
