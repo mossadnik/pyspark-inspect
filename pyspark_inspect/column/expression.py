@@ -192,6 +192,16 @@ class GetItem(Expression):
 
 
 @dataclass(frozen=True)
+class Isin(Expression):
+    """Method Column.isin"""
+    child: Expression = term.child()
+    values: tuple[Expression, ...] = term.child()
+
+    def to_col(self):
+        return self.child.to_col().isin(*[v.to_col() for v in self.values])
+
+
+@dataclass(frozen=True)
 class SortOrder(Expression):
     child: Expression = term.child()
     asc: bool = term.param()

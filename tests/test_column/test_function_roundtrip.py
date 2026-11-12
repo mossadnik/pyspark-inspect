@@ -27,6 +27,13 @@ def test_GetItem_roundtrip(spark_session):
     assert actual == expr
 
 
+def test_isin_roundtrip(spark_session):
+    expr = E.Isin(child=a, values=(b, number))
+    col = expr.to_col()
+    actual = inspect_column(col)
+    assert actual == expr
+
+
 def test_WindowExpression_roundtrip(spark_session):
     expr = E.WindowExpression(
         window_function=E.Function(E.FunctionName.max_, (a,)),

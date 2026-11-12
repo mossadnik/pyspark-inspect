@@ -116,6 +116,12 @@ def parse_catalyst_expression(expr: CatalystPlan) -> E.Expression:
             args.append(parse_catalyst_expression(load_catalyst_plan(otherwise)))
         return E.CaseWhen(tuple(args))
 
+    if expr.class_name == 'org.apache.spark.sql.catalyst.expressions.In':
+        return E.Isin(
+            child=children[0],
+            values=tuple(children[1:])
+        )
+
     if expr.class_name == 'org.apache.spark.sql.catalyst.analysis.UnresolvedFunction':
         name_parts = parse_array_string(expr.data['nameParts'])
         unresolved_name = name_parts[0]
