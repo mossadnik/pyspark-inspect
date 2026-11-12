@@ -1,5 +1,5 @@
 """High-level public functions and classes."""
-from typing import cast
+from typing import cast, Generator
 
 from py4j.protocol import Py4JError
 from pyspark.sql import Column
@@ -31,6 +31,18 @@ def inspect_column(col: Column) -> Expression:
             raise NotImplementedError('Only pyspark < 4.0.0 is supported for spark classic')
         else:
             raise
+
+
+def get_column_references(expr: Expression) -> set[str]:
+    """Get all referenced columns in an expression."""
+    def recurse(expr: Expression) -> Generator[str, None, None]:
+        if isinstance(expr, ColumnReference):
+            yield expr.name
+        else:
+            for child in expr.iter_children():
+                yield from recurse(child)
+
+    return {col for col in recurse(expr)}
 
 
 def replace_column_references(expr: Expression, subs: dict[str, Expression]) -> Expression:
